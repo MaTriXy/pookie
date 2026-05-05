@@ -40,6 +40,7 @@ type BorderedIconButtonProps = {
   variant: IconControlVariant;
   label: string;
   children: ReactNode;
+  interactive?: boolean;
 } & Omit<
   ComponentPropsWithoutRef<"button">,
   "aria-label" | "children" | "className"
@@ -48,7 +49,18 @@ type BorderedIconButtonProps = {
 export const BorderedIconButton = forwardRef<
   HTMLButtonElement,
   BorderedIconButtonProps
->(({ variant, label, children, ...buttonProps }, ref) => {
+>(
+  (
+    {
+      variant,
+      label,
+      children,
+      disabled,
+      interactive = true,
+      ...buttonProps
+    },
+    ref,
+  ) => {
   const classes = iconControlClasses[variant];
 
   return (
@@ -56,11 +68,12 @@ export const BorderedIconButton = forwardRef<
       ref={ref}
       aria-label={label}
       className={cx(
-        animations.actionButton,
+        interactive && animations.actionButton,
         "relative grid shrink-0 grid-cols-1 grid-rows-1 appearance-none border-0 bg-transparent p-0 text-left text-inherit [font:inherit]",
-        "cursor-pointer",
+        interactive ? "cursor-pointer" : "cursor-default",
         classes.button,
       )}
+      disabled={disabled || !interactive}
       type="button"
       {...buttonProps}
     >
@@ -75,6 +88,7 @@ export const BorderedIconButton = forwardRef<
       {children}
     </button>
   );
-});
+  },
+);
 
 BorderedIconButton.displayName = "BorderedIconButton";

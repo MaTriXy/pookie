@@ -12,7 +12,11 @@ export const HeaderActions = ({ children }: { children?: ReactNode }) => (
   <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:mr-0 max-[520px]:gap-1.5">
     {children ?? (
       <>
-        <BorderedIconButton label="View 2 members" variant="members">
+        <BorderedIconButton
+          interactive={false}
+          label="View 2 members"
+          variant="members"
+        >
           <span className="col-start-1 row-start-1 ml-[34px] h-6 self-center justify-self-start text-[17px] leading-6 font-medium text-[#495058]">
             2
           </span>
