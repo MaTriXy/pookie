@@ -268,14 +268,6 @@ export const Sidebar = ({
           variant === "drawer" ? "mt-0 w-full" : "mt-[30px] w-[188px]",
         )}
       >
-        <div
-          className={cx(
-            "mb-3 flex h-6 items-center pl-[7px] text-lg leading-6 font-semibold text-[#495058]",
-            variant === "drawer" ? "w-full" : "w-[188px]",
-          )}
-        >
-          channels
-        </div>
         {CHANNELS.map((channel) => {
           const isActiveChannel = channel === activeChannel;
           const isStaticDrawerDocs = variant === "drawer" && channel === "docs";
