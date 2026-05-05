@@ -36,36 +36,18 @@ import {
   type EditorThemeClasses,
   type LexicalEditor,
 } from "lexical";
-import dynamic from "next/dynamic";
-import { createPortal } from "react-dom";
 
 import {
-  Fragment,
   type Ref,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 
 import { composerShadow, cx } from "./styles";
 
-import type { EmojiClickData, EmojiStyle, Theme } from "emoji-picker-react";
-
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
-  ssr: false,
-});
-
-const EMOJI_PICKER_THEME_LIGHT = "light" as Theme;
-const EMOJI_PICKER_STYLE_NATIVE = "native" as EmojiStyle;
-
 const SEND_CONFIRMATION_MS = 1200;
-const FORMATTING_ACTION_LABEL = "Text formatting";
-const EMOJI_LABEL = "Emoji";
-const EMOJI_PICKER_HEIGHT_PX = 350;
-const EMOJI_PICKER_WIDTH_PX = 320;
-const EMOJI_PICKER_GAP_PX = 8;
 
 type BlockType = "paragraph" | "ul" | "ol" | "quote";
 
@@ -118,33 +100,6 @@ const FORMAT_ICONS: Array<ComposerIcon | "divider"> = [
   {
     label: "Code",
     path: "M12.058 3.212c.396.12.62.54.5.936L8.87 16.29a.75.75 0 1 1-1.435-.436l3.686-12.143a.75.75 0 0 1 .936-.5ZM5.472 6.24a.75.75 0 0 1 .005 1.06l-2.67 2.693 2.67 2.691a.75.75 0 1 1-1.065 1.057l-3.194-3.22a.75.75 0 0 1 0-1.056l3.194-3.22a.75.75 0 0 1 1.06-.005Zm9.044 1.06a.75.75 0 1 1 1.065-1.056l3.194 3.221a.75.75 0 0 1 0 1.057l-3.194 3.219a.75.75 0 0 1-1.065-1.057l2.67-2.69-2.67-2.693Z",
-  },
-];
-
-const ACTION_ICONS: ComposerIcon[] = [
-  {
-    label: FORMATTING_ACTION_LABEL,
-    path: "M6.941 3.952c-.459-1.378-2.414-1.363-2.853.022l-4.053 12.8a.75.75 0 0 0 1.43.452l1.101-3.476h6.06l1.163 3.487a.75.75 0 1 0 1.423-.474L6.941 3.952Zm1.185 8.298L5.518 4.427 3.041 12.25h5.085Z",
-  },
-  {
-    label: EMOJI_LABEL,
-    path: "M2.5 10a7.5 7.5 0 1 1 15 0 7.5 7.5 0 0 1-15 0ZM10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM7.5 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM14 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm-6.385 3.766a.75.75 0 1 0-1.425.468C6.796 14.08 8.428 15 10.027 15s3.23-.92 3.838-2.766a.75.75 0 1 0-1.425-.468c-.38 1.155-1.38 1.734-2.413 1.734s-2.032-.58-2.412-1.734Z",
-  },
-  {
-    label: "Mention",
-    path: "M2.5 10a7.5 7.5 0 1 1 15 0v.645c0 1.024-.83 1.855-1.855 1.855a1.145 1.145 0 0 1-1.145-1.145V6.75a.75.75 0 0 0-1.494-.098 4.5 4.5 0 1 0 .465 6.212A2.64 2.64 0 0 0 15.646 14 3.355 3.355 0 0 0 19 10.645V10a9 9 0 1 0-3.815 7.357.75.75 0 1 0-.865-1.225A7.5 7.5 0 0 1 2.5 10Zm7.5 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
-  },
-  {
-    label: "Video",
-    path: "M3.75 4.5a.75.75 0 0 0-.75.75v9.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-2.59a.75.75 0 0 1 1.124-.65l3.376 1.943V6.547l-3.376 1.944A.75.75 0 0 1 13 7.84V5.25a.75.75 0 0 0-.75-.75h-8.5Zm-2.25.75A2.25 2.25 0 0 1 3.75 3h8.5a2.25 2.25 0 0 1 2.25 2.25v1.294l2.626-1.512A1.25 1.25 0 0 1 19 6.115v7.77a1.25 1.25 0 0 1-1.874 1.083L14.5 13.456v1.294A2.25 2.25 0 0 1 12.25 17h-8.5a2.25 2.25 0 0 1-2.25-2.25V5.25Z",
-  },
-  {
-    label: "Voice",
-    path: "M10 2a3.5 3.5 0 0 0-3.5 3.5v3a3.5 3.5 0 1 0 7 0v-3A3.5 3.5 0 0 0 10 2ZM8 5.5a2 2 0 1 1 4 0v3a2 2 0 1 1-4 0v-3ZM5 8.25a.75.75 0 0 0-1.5 0v.25a6.5 6.5 0 0 0 5.75 6.457V16.5h-1.5a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-1.5v-1.543A6.5 6.5 0 0 0 16.5 8.5v-.25a.75.75 0 0 0-1.5 0v.25a5 5 0 0 1-10 0v-.25Z",
-  },
-  {
-    label: "More",
-    path: "M4.5 3h11A1.5 1.5 0 0 1 17 4.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15.5v-11A1.5 1.5 0 0 1 4.5 3Zm-3 1.5a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11Zm11.64 1.391a.75.75 0 0 0-1.28-.782l-5.5 9a.75.75 0 0 0 1.28.782l5.5-9Z",
   },
 ];
 
@@ -414,223 +369,14 @@ const SendOnEnterPlugin = ({ onSend }: { onSend: () => void }) => {
   return null;
 };
 
-const VIEWPORT_EDGE_PADDING_PX = 8;
-
-const computeEmojiPickerPosition = (buttonRect: DOMRect) => {
-  const viewportHeight = window.innerHeight;
-  const viewportWidth = window.innerWidth;
-  const spaceAbove = buttonRect.top;
-  const spaceBelow = viewportHeight - buttonRect.bottom;
-
-  let top: number;
-  if (spaceAbove >= EMOJI_PICKER_HEIGHT_PX + EMOJI_PICKER_GAP_PX) {
-    top = buttonRect.top - EMOJI_PICKER_HEIGHT_PX - EMOJI_PICKER_GAP_PX;
-  } else if (spaceBelow >= EMOJI_PICKER_HEIGHT_PX + EMOJI_PICKER_GAP_PX) {
-    top = buttonRect.bottom + EMOJI_PICKER_GAP_PX;
-  } else {
-    top = Math.max(
-      VIEWPORT_EDGE_PADDING_PX,
-      viewportHeight - EMOJI_PICKER_HEIGHT_PX - VIEWPORT_EDGE_PADDING_PX,
-    );
-  }
-
-  const maxLeft =
-    viewportWidth - EMOJI_PICKER_WIDTH_PX - VIEWPORT_EDGE_PADDING_PX;
-  const left = Math.min(
-    Math.max(buttonRect.left, VIEWPORT_EDGE_PADDING_PX),
-    Math.max(VIEWPORT_EDGE_PADDING_PX, maxLeft),
-  );
-
-  return { top, left };
-};
-
-const EmojiInsertButton = ({ icon }: { icon: ComposerIcon }) => {
-  const [editor] = useLexicalComposerContext();
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-
-  const updatePickerPosition = useCallback(() => {
-    if (!buttonRef.current) return;
-    setPickerPosition(
-      computeEmojiPickerPosition(buttonRef.current.getBoundingClientRect()),
-    );
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!isPickerOpen) return;
-    updatePickerPosition();
-  }, [isPickerOpen, updatePickerPosition]);
-
-  useEffect(() => {
-    if (!isPickerOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        buttonRef.current?.contains(target) ||
-        pickerRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setIsPickerOpen(false);
-    };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsPickerOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    window.addEventListener("scroll", updatePickerPosition, {
-      passive: true,
-      capture: true,
-    });
-    window.addEventListener("resize", updatePickerPosition, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-      window.removeEventListener("scroll", updatePickerPosition, {
-        capture: true,
-      });
-      window.removeEventListener("resize", updatePickerPosition);
-    };
-  }, [isPickerOpen, updatePickerPosition]);
-
-  const handleEmojiClick = useCallback(
-    (emojiData: EmojiClickData) => {
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertText(emojiData.emoji);
-        } else {
-          const root = $getRoot();
-          const lastChild = root.getLastChild();
-          if (lastChild !== null) {
-            lastChild.selectEnd().insertText(emojiData.emoji);
-          }
-        }
-      });
-      editor.focus(undefined, { defaultSelection: "rootEnd" });
-      setIsPickerOpen(false);
-    },
-    [editor],
-  );
-
-  return (
-    <>
-      <ComposerIconButton
-        ariaExpanded={isPickerOpen}
-        ariaHasPopup="dialog"
-        icon={icon}
-        isActive={isPickerOpen}
-        onClick={() => setIsPickerOpen((wasOpen) => !wasOpen)}
-        ref={buttonRef}
-      />
-      {isPickerOpen &&
-        createPortal(
-          <div
-            ref={pickerRef}
-            aria-label="Emoji picker"
-            className="fixed z-[9999] [&_.EmojiPickerReact]:rounded-xl! [&_.EmojiPickerReact]:border-[#e8e8e8]! [&_.EmojiPickerReact]:text-base! [&_.EmojiPickerReact]:[box-shadow:#00000008_0px_2px_24px,#00000006_0px_4px_4px,#0000000a_0px_2px_2px]! [&_.EmojiPickerReact]:[--epr-category-label-height:28px]! [&_.EmojiPickerReact]:[--epr-category-navigation-button-size:22px]! [&_.EmojiPickerReact]:[--epr-header-padding:8px_10px_4px]! [&_.EmojiPickerReact_input]:text-base!"
-            role="dialog"
-            style={{ top: pickerPosition.top, left: pickerPosition.left }}
-          >
-            <EmojiPicker
-              emojiStyle={EMOJI_PICKER_STYLE_NATIVE}
-              height={EMOJI_PICKER_HEIGHT_PX}
-              lazyLoadEmojis
-              onEmojiClick={handleEmojiClick}
-              previewConfig={{ showPreview: false }}
-              searchPlaceHolder="Search emoji..."
-              skinTonesDisabled
-              theme={EMOJI_PICKER_THEME_LIGHT}
-              width={EMOJI_PICKER_WIDTH_PX}
-            />
-          </div>,
-          document.body,
-        )}
-    </>
-  );
-};
-
 const BottomToolbar = ({
-  isFormattingVisible,
-  onToggleFormatting,
   onSend,
   canSend,
-  attachmentCount,
-  onAddAttachment,
-  activeAction,
-  onToggleAction,
 }: {
-  isFormattingVisible: boolean;
-  onToggleFormatting: () => void;
   onSend: () => void;
   canSend: boolean;
-  attachmentCount: number;
-  onAddAttachment: () => void;
-  activeAction: string | null;
-  onToggleAction: (label: string) => void;
 }) => (
-  <div className="flex h-10 shrink-0 items-center justify-between">
-    <div className="flex items-center gap-0.5">
-      <button
-        aria-label={
-          attachmentCount > 0
-            ? `Add attachment (${attachmentCount} attached)`
-            : "Add attachment"
-        }
-        className="relative inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-[rgb(29_28_29_/_0.06)] p-0.5 text-[#454447] transition-colors hover:bg-[rgb(29_28_29_/_0.13)]"
-        onClick={onAddAttachment}
-        type="button"
-      >
-        <svg
-          aria-hidden="true"
-          className="h-[18px] w-[18px] shrink-0"
-          viewBox="0 0 20 20"
-        >
-          <path
-            d="M10.75 3.25a.75.75 0 0 0-1.5 0v6H3.25a.75.75 0 0 0 0 1.5h6v6a.75.75 0 0 0 1.5 0v-6h6a.75.75 0 0 0 0-1.5h-6v-6Z"
-            fill="currentColor"
-            fillRule="evenodd"
-          />
-        </svg>
-        {attachmentCount > 0 && (
-          <span
-            aria-hidden="true"
-            className="absolute -top-1 -right-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-[#007a5a] px-[3px] text-[9px] leading-none font-bold text-white"
-          >
-            {attachmentCount}
-          </span>
-        )}
-      </button>
-      {ACTION_ICONS.map((icon, index) => {
-        const isFormatting = icon.label === FORMATTING_ACTION_LABEL;
-        const isEmoji = icon.label === EMOJI_LABEL;
-        const isActive = isFormatting
-          ? isFormattingVisible
-          : activeAction === icon.label;
-        return (
-          <Fragment key={icon.label}>
-            {index === 3 || index === 5 ? (
-              <ComposerDivider key={`${icon.label}-divider`} />
-            ) : null}
-            {isEmoji ? (
-              <EmojiInsertButton icon={icon} />
-            ) : (
-              <ComposerIconButton
-                icon={icon}
-                isActive={isActive}
-                onClick={() =>
-                  isFormatting
-                    ? onToggleFormatting()
-                    : onToggleAction(icon.label)
-                }
-              />
-            )}
-          </Fragment>
-        );
-      })}
-    </div>
+  <div className="flex h-10 shrink-0 items-center justify-end">
     <div className="flex items-center">
       <button
         aria-disabled={!canSend}
@@ -668,9 +414,6 @@ const ComposerInner = () => {
     formats: new Set(),
     blockType: "paragraph",
   });
-  const [isFormattingVisible, setIsFormattingVisible] = useState(true);
-  const [attachmentCount, setAttachmentCount] = useState(0);
-  const [activeAction, setActiveAction] = useState<string | null>(null);
   const [didJustSend, setDidJustSend] = useState(false);
   const sendConfirmationTimeoutRef = useRef<number | null>(null);
 
@@ -682,20 +425,19 @@ const ComposerInner = () => {
     };
   }, []);
 
-  const canSend = !toolbarState.isEmpty || attachmentCount > 0;
+  const canSend = !toolbarState.isEmpty;
 
   const sendMessage = useCallback(() => {
     let hasContent = false;
     editor.getEditorState().read(() => {
       hasContent = $getRoot().getTextContent().trim().length > 0;
     });
-    if (!hasContent && attachmentCount === 0) return;
+    if (!hasContent) return;
     editor.update(() => {
       const root = $getRoot();
       root.clear();
       root.append($createParagraphNode());
     });
-    setAttachmentCount(0);
     setDidJustSend(true);
     if (sendConfirmationTimeoutRef.current !== null) {
       window.clearTimeout(sendConfirmationTimeoutRef.current);
@@ -704,11 +446,11 @@ const ComposerInner = () => {
       setDidJustSend(false);
       sendConfirmationTimeoutRef.current = null;
     }, SEND_CONFIRMATION_MS);
-  }, [editor, attachmentCount]);
+  }, [editor]);
 
   return (
     <>
-      {isFormattingVisible && <FormattingToolbar toolbarState={toolbarState} />}
+      <FormattingToolbar toolbarState={toolbarState} />
       <div className="relative flex min-h-[58px] shrink-0 flex-col justify-center pl-[11px]">
         <RichTextPlugin
           ErrorBoundary={LexicalErrorBoundary}
@@ -729,18 +471,8 @@ const ComposerInner = () => {
         />
       </div>
       <BottomToolbar
-        activeAction={activeAction}
-        attachmentCount={attachmentCount}
         canSend={canSend}
-        isFormattingVisible={isFormattingVisible}
-        onAddAttachment={() => setAttachmentCount((previous) => previous + 1)}
         onSend={sendMessage}
-        onToggleAction={(label) =>
-          setActiveAction((previous) => (previous === label ? null : label))
-        }
-        onToggleFormatting={() =>
-          setIsFormattingVisible((previous) => !previous)
-        }
       />
       <HistoryPlugin />
       <ListPlugin />

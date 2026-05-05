@@ -503,7 +503,7 @@ export const ChannelPanel = () => {
               style={messageBodyIndentStyle}
             >
               <a
-                className="inline-flex h-[33px] items-center gap-1.5 rounded-full bg-[#007a5a] px-4 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
+                className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-4 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
                 href="/api/slack/install"
                 rel="noopener noreferrer"
               >

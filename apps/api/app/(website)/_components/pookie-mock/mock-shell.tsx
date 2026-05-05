@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ScrollFadeViewport } from "./scroll-fade-viewport";
 import { Sidebar } from "./sidebar";
 import { cx, panelShadow } from "./styles";
 
@@ -53,8 +54,8 @@ export const ContentPanel = ({
       </header>
     </div>
 
-    <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-[22px] pb-6 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] max-[520px]:px-4">
+    <ScrollFadeViewport className="px-[22px] pb-6 max-[520px]:px-4">
       {children}
-    </div>
+    </ScrollFadeViewport>
   </div>
 );
