@@ -42,7 +42,7 @@ const MESSAGE_BODY_INDENT_PX = 55;
 const messageBodyIndentStyle = { paddingLeft: MESSAGE_BODY_INDENT_PX };
 
 const HeaderActions = () => (
-  <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:translate-y-[-8px]">
+  <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:mr-0 max-[520px]:gap-1.5">
     <BorderedIconButton label="View 7 members" variant="members">
       <span className="col-start-1 row-start-1 ml-[34px] h-6 self-center justify-self-start text-[17px] leading-6 font-medium tracking-[-0.03em] text-[#495058]">
         7
@@ -71,7 +71,7 @@ const HeaderActions = () => (
 );
 
 const ChannelHeader = () => (
-  <header className="mb-5 flex h-[41px] w-full shrink-0 items-start justify-between max-[520px]:h-auto max-[520px]:gap-4">
+  <header className="mb-5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
     <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold tracking-[-0.03em] text-[#393939]">
       <span>#</span>
       <span>pookie</span>
@@ -254,7 +254,7 @@ const MessageBlock = ({
 }) => (
   <div
     className={cx(
-      "-ml-[22px] flex w-[calc(100%+30px)] shrink-0 flex-col pr-2 pl-[22px] hover:bg-black/[0.02] max-[520px]:-ml-5 max-[520px]:w-[calc(100%+40px)] max-[520px]:pr-5 max-[520px]:pl-5",
+      "-ml-[22px] flex w-[calc(100%+30px)] shrink-0 flex-col pr-2 pl-[22px] hover:bg-black/[0.02] max-[520px]:-ml-4 max-[520px]:w-[calc(100%+32px)] max-[520px]:pr-4 max-[520px]:pl-4",
       groupedWithPrevious ? "py-[2px]" : "py-[10px]",
       withBottomGap && "mb-[6px]",
       revealDelayMs !== undefined && animations.messageReveal,
@@ -352,7 +352,7 @@ export const ChannelPanel = () => {
         "relative flex h-[calc(100svh-clamp(48px,10vh,112px)-165px)] w-[720px] max-w-full flex-[0_0_auto] shrink flex-col overflow-hidden rounded-[18px] bg-white max-[920px]:h-auto max-[920px]:w-full max-[920px]:min-w-0 max-[920px]:basis-auto",
       )}
     >
-      <div className="shrink-0 bg-white pt-[25px] pr-2 pl-[22px] max-[520px]:px-5">
+      <div className="shrink-0 bg-white pt-[25px] pr-2 pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
         <ChannelHeader />
       </div>
 
@@ -366,7 +366,7 @@ export const ChannelPanel = () => {
           className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-white to-white/0"
         />
 
-        <div className="h-full overflow-x-hidden overflow-y-auto pr-2 pl-[22px] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] max-[520px]:px-5">
+        <div className="h-full overflow-x-hidden overflow-y-auto pr-2 pl-[22px] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] max-[520px]:px-4">
           <MessageBlock
             sender="you"
             body="what'd we ship this week?"

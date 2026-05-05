@@ -24,7 +24,7 @@ export interface SidebarSubItem {
 }
 
 const CHANNEL_ROW =
-  "flex h-[36px] w-[188px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px] max-[520px]:w-full";
+  "flex h-[36px] w-[188px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px]";
 
 let shouldAnimateNextDocsSubitems = false;
 
@@ -152,7 +152,7 @@ const ChannelRow = ({
 };
 
 const DmRow = ({ label }: { label: string }) => (
-  <div className="flex h-[36px] w-[188px] shrink-0 cursor-pointer items-center gap-0.5 rounded-[11px] bg-transparent pl-[15px] hover:bg-black/[0.035] max-[520px]:w-full">
+  <div className="flex h-[36px] w-[188px] shrink-0 cursor-pointer items-center gap-0.5 rounded-[11px] bg-transparent pl-[15px] hover:bg-black/[0.035]">
     <ActiveIcon />
     <span className={cx(sidebarTextBase, "min-w-[81px] text-[#495058]")}>
       {label}
@@ -189,9 +189,9 @@ export const Sidebar = ({
   };
 
   return (
-    <aside className="flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[188px] shrink-0 flex-col justify-between pb-[165px] max-[1040px]:h-auto max-[1040px]:w-[min(100%,967px)] max-[1040px]:flex-row max-[1040px]:justify-center max-[1040px]:gap-8 max-[920px]:items-start max-[920px]:justify-start max-[920px]:gap-5 max-[920px]:overflow-x-auto max-[520px]:w-full max-[520px]:flex-col">
-      <div className="mt-[30px] flex w-[188px] flex-col gap-1 max-[1040px]:py-0 max-[520px]:w-full">
-        <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold tracking-[-0.03em] text-[#495058] max-[520px]:w-full">
+    <aside className="flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[188px] shrink-0 flex-col justify-between pb-[165px] max-[1040px]:h-auto max-[1040px]:w-[min(100%,967px)] max-[1040px]:flex-row max-[1040px]:justify-center max-[1040px]:gap-8 max-[1040px]:pb-0 max-[920px]:items-start max-[920px]:justify-start max-[920px]:gap-5 max-[920px]:overflow-x-auto max-[920px]:[scrollbar-width:none] max-[920px]:[-ms-overflow-style:none] max-[920px]:[&::-webkit-scrollbar]:hidden max-[520px]:hidden">
+      <div className="mt-[30px] flex w-[188px] shrink-0 flex-col gap-1 max-[1040px]:py-0">
+        <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold tracking-[-0.03em] text-[#495058]">
           channels
         </div>
         {CHANNELS.map((channel) => (
@@ -207,7 +207,7 @@ export const Sidebar = ({
         ))}
       </div>
 
-      <div className="flex w-[188px] flex-col gap-1 max-[1040px]:justify-end max-[1040px]:py-0 max-[520px]:w-full">
+      <div className="flex w-[188px] shrink-0 flex-col gap-1 max-[1040px]:justify-end max-[1040px]:py-0">
         {DIRECT_MESSAGES.map((directMessage) => (
           <DmRow key={directMessage} label={directMessage} />
         ))}
