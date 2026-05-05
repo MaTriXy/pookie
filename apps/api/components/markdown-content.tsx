@@ -21,7 +21,7 @@ const extractText = (node: ReactNode): string => {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="mt-2 mb-3 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d] first:mt-0">
+    <h1 className="mt-2 mb-3 text-base leading-6 font-bold tracking-normal text-[#1d1c1d] first:mt-0">
       {children}
     </h1>
   ),
@@ -30,7 +30,7 @@ const components: Components = {
     return (
       <h2
         id={id}
-        className="mt-6 mb-2 scroll-mt-12 border-b border-[#f0f0f0] pb-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]"
+        className="mt-6 mb-2 scroll-mt-12 border-b border-[#f0f0f0] pb-2 text-base leading-6 font-bold tracking-normal text-[#1d1c1d]"
       >
         {children}
       </h2>
@@ -41,14 +41,14 @@ const components: Components = {
     return (
       <h3
         id={id}
-        className="mt-4 mb-2 scroll-mt-12 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]"
+        className="mt-4 mb-2 scroll-mt-12 text-base leading-6 font-bold tracking-normal text-[#1d1c1d]"
       >
         {children}
       </h3>
     );
   },
   p: ({ children }) => (
-    <p className="mb-3 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+    <p className="mb-3 text-base leading-6 font-medium tracking-normal text-[#4d4d4d]">
       {children}
     </p>
   ),
@@ -82,12 +82,12 @@ const components: Components = {
     <ol className="my-3 ml-5 flex list-decimal flex-col gap-1.5">{children}</ol>
   ),
   li: ({ children }) => (
-    <li className="text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d] [&>p]:mb-0">
+    <li className="text-base leading-6 font-medium tracking-normal text-[#4d4d4d] [&>p]:mb-0">
       {children}
     </li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="my-3 border-l-[3px] border-[#dddddd] pl-4 text-base leading-6 font-medium tracking-[-0.02em] text-[#717274]">
+    <blockquote className="my-3 border-l-[3px] border-[#dddddd] pl-4 text-base leading-6 font-medium tracking-normal text-[#717274]">
       {children}
     </blockquote>
   ),
@@ -105,7 +105,7 @@ const components: Components = {
     <thead className="border-b border-[#e8e8e8] bg-[#fafafa]">{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="px-3 py-2 text-left text-[13px] font-bold tracking-[-0.02em] text-[#1d1c1d]">
+    <th className="px-3 py-2 text-left text-[13px] font-bold tracking-normal text-[#1d1c1d]">
       {children}
     </th>
   ),
@@ -113,7 +113,7 @@ const components: Components = {
     <tr className="border-b border-[#f0f0f0] last:border-0">{children}</tr>
   ),
   td: ({ children }) => (
-    <td className="px-3 py-2 align-top text-[14px] leading-[20px] tracking-[-0.01em] text-[#4d4d4d]">
+    <td className="px-3 py-2 align-top text-[14px] leading-[20px] tracking-normal text-[#4d4d4d]">
       {children}
     </td>
   ),

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { HeaderActions } from "./header-actions";
+import { MobileSidebarDrawer } from "./mobile-sidebar-drawer";
 import { ScrollFadeViewport } from "./scroll-fade-viewport";
 import { Sidebar } from "./sidebar";
 import { cx, panelShadow } from "./styles";
@@ -31,10 +33,14 @@ export const MockShell = ({
 
 export const ContentPanel = ({
   channelName,
+  activeChannel,
+  subItems,
   headerActions,
   children,
 }: {
   channelName: string;
+  activeChannel: string;
+  subItems?: SidebarSubItem[];
   headerActions?: ReactNode;
   children: ReactNode;
 }) => (
@@ -44,13 +50,19 @@ export const ContentPanel = ({
       "relative flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[720px] max-w-full flex-[0_0_auto] shrink flex-col overflow-hidden rounded-[18px] bg-white max-[920px]:h-auto max-[920px]:w-full max-[920px]:min-w-0 max-[920px]:basis-auto",
     )}
   >
-    <div className="shrink-0 bg-white pt-[25px] pr-[22px] pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
-      <header className="mb-5 flex h-[30px] w-full shrink-0 items-center justify-between gap-3">
-        <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
-          <span>#</span>
-          <span>{channelName}</span>
+    <div className="shrink-0 bg-white pt-[25px] pr-2 pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
+      <header className="mb-5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <MobileSidebarDrawer
+            activeChannel={activeChannel}
+            subItems={subItems}
+          />
+          <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
+            <span>#</span>
+            <span>{channelName}</span>
+          </div>
         </div>
-        {headerActions}
+        <HeaderActions>{headerActions}</HeaderActions>
       </header>
     </div>
 

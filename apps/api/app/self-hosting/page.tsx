@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 const SelfHostingPage = () => (
   <MockShell activeChannel="docs">
-    <ContentPanel channelName="docs">
+    <ContentPanel activeChannel="docs" channelName="docs">
       <article>
         <MarkdownContent content={CONTENT} />
       </article>

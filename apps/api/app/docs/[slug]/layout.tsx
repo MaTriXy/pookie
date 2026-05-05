@@ -44,7 +44,12 @@ const DocSlugLayout = async ({ children, params }: DocSlugLayoutProps) => {
 
   return (
     <MockShell activeChannel="docs" subItems={subItems}>
-      <ContentPanel channelName="docs" headerActions={<CopyAsMarkdownButton />}>
+      <ContentPanel
+        activeChannel="docs"
+        channelName="docs"
+        headerActions={<CopyAsMarkdownButton />}
+        subItems={subItems}
+      >
         {children}
       </ContentPanel>
     </MockShell>

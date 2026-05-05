@@ -57,6 +57,39 @@
   will-change: transform, opacity;
 }
 
+.iconSwap {
+  --icon-swap-dur: 150ms;
+  --icon-swap-blur: 2px;
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: ease-in-out;
+
+  position: relative;
+  display: inline-grid;
+}
+
+.icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--icon-swap-dur) var(--icon-swap-ease),
+    filter var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+
+.iconSwap[data-state="copy"] .icon[data-icon="copy"],
+.iconSwap[data-state="check"] .icon[data-icon="check"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.iconSwap[data-state="copy"] .icon[data-icon="check"],
+.iconSwap[data-state="check"] .icon[data-icon="copy"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
 @keyframes message-slide-in {
   from {
     opacity: 0;
@@ -117,6 +150,10 @@
   .messageReveal {
     animation: none !important;
     opacity: 1;
+  }
+
+  .icon {
+    transition: none !important;
   }
 
   .actionSvg,

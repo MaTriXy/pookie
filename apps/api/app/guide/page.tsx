@@ -65,7 +65,7 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
 
   return (
     <MockShell activeChannel="install">
-      <ContentPanel channelName="install">
+      <ContentPanel activeChannel="install" channelName="install">
         <div className="flex flex-col gap-5 pt-1 pb-2">
           <div className="flex flex-col gap-3">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[#007a5a] px-2 py-0.5 text-[12px] leading-[18px] font-semibold text-white">

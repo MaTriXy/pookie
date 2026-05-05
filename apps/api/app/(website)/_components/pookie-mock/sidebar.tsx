@@ -38,6 +38,7 @@ const ChannelRow = ({
   animateSubItems = false,
   subItemsAnimationKey = 0,
   onSubItemsAnimationComplete,
+  onNavigate,
 }: {
   label: string;
   active?: boolean;
@@ -45,6 +46,7 @@ const ChannelRow = ({
   animateSubItems?: boolean;
   subItemsAnimationKey?: number;
   onSubItemsAnimationComplete?: () => void;
+  onNavigate?: () => void;
 }) => {
   const href = CHANNEL_HREFS[label];
   const isExternal = href?.startsWith("http");
@@ -119,8 +121,9 @@ const ChannelRow = ({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={cx(
-                    "flex h-[32px] items-center gap-1.5 rounded-[9px] pl-[12px] text-[15px] font-medium no-underline transition-colors",
+                    "flex h-[32px] items-center gap-1.5 rounded-[9px] pl-[12px] text-[15px] font-semibold no-underline transition-colors",
                     hasTopMargin && "mt-[3px]",
                     item.active
                       ? "bg-[#f0f0f0] text-[#495058]"
@@ -157,7 +160,10 @@ const ChannelRow = ({
   return (
     <Link
       href={href ?? "#"}
-      onClick={label === "docs" ? queueDocsSubitemAnimation : undefined}
+      onClick={() => {
+        if (label === "docs") queueDocsSubitemAnimation();
+        onNavigate?.();
+      }}
       className={cx(
         CHANNEL_ROW,
         "cursor-pointer bg-transparent no-underline hover:bg-black/[0.035]",
@@ -171,9 +177,13 @@ const ChannelRow = ({
 export const Sidebar = ({
   activeChannel = "pookie",
   subItems,
+  variant = "inline",
+  onNavigate,
 }: {
   activeChannel?: string;
   subItems?: SidebarSubItem[];
+  variant?: "inline" | "drawer";
+  onNavigate?: () => void;
 }) => {
   const [subItemsAnimationKey, setSubItemsAnimationKey] = useState(0);
   const [shouldAnimateDocsSubitems, setShouldAnimateDocsSubitems] = useState(
@@ -197,8 +207,19 @@ export const Sidebar = ({
   };
 
   return (
-    <aside className="flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[188px] shrink-0 flex-col justify-between pb-[165px] max-[1040px]:h-auto max-[1040px]:w-[min(100%,967px)] max-[1040px]:flex-row max-[1040px]:justify-center max-[1040px]:gap-8 max-[1040px]:pb-0 max-[920px]:items-start max-[920px]:justify-start max-[920px]:gap-5 max-[920px]:overflow-x-auto max-[920px]:[scrollbar-width:none] max-[920px]:[-ms-overflow-style:none] max-[920px]:[&::-webkit-scrollbar]:hidden max-[520px]:hidden">
-      <div className="mt-[30px] flex w-[188px] shrink-0 flex-col gap-1 max-[1040px]:py-0">
+    <aside
+      className={cx(
+        variant === "drawer"
+          ? "flex h-auto w-full shrink-0 flex-col pb-0"
+          : "flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[188px] shrink-0 flex-col justify-between pb-[165px] max-[1040px]:hidden",
+      )}
+    >
+      <div
+        className={cx(
+          "flex w-[188px] shrink-0 flex-col gap-1",
+          variant === "drawer" ? "mt-0" : "mt-[30px]",
+        )}
+      >
         <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold text-[#495058]">
           channels
         </div>
@@ -211,6 +232,7 @@ export const Sidebar = ({
             animateSubItems={channel === "docs" && shouldAnimateDocsSubitems}
             subItemsAnimationKey={subItemsAnimationKey}
             onSubItemsAnimationComplete={completeDocsSubitemsAnimation}
+            onNavigate={onNavigate}
           />
         ))}
       </div>

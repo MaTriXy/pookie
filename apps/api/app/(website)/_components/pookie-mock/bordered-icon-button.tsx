@@ -1,9 +1,11 @@
+import { forwardRef } from "react";
+
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import animations from "./animations.module.css";
 import { cx, paperItemSurface } from "./styles";
 
-type IconControlVariant = "members" | "audio" | "bell" | "close";
+type IconControlVariant = "members" | "audio" | "bell" | "close" | "icon";
 
 const iconControlClasses = {
   members: {
@@ -18,6 +20,10 @@ const iconControlClasses = {
     button: cx(animations.bell, "h-[41px] w-[41px]"),
     background: "h-full w-full rounded-[13px]",
   },
+  icon: {
+    button: "h-[41px] w-[41px]",
+    background: "h-full w-full rounded-[13px]",
+  },
   close: {
     button: "h-[41px] w-[41px] translate-x-1",
     background: "h-[41px] w-[41px] rounded-[13px]",
@@ -30,23 +36,24 @@ const iconControlClasses = {
   }
 >;
 
-export const BorderedIconButton = ({
-  variant,
-  label,
-  children,
-  ...buttonProps
-}: {
+type BorderedIconButtonProps = {
   variant: IconControlVariant;
   label: string;
   children: ReactNode;
 } & Omit<
   ComponentPropsWithoutRef<"button">,
   "aria-label" | "children" | "className"
->) => {
+>;
+
+export const BorderedIconButton = forwardRef<
+  HTMLButtonElement,
+  BorderedIconButtonProps
+>(({ variant, label, children, ...buttonProps }, ref) => {
   const classes = iconControlClasses[variant];
 
   return (
     <button
+      ref={ref}
       aria-label={label}
       className={cx(
         animations.actionButton,
@@ -68,4 +75,6 @@ export const BorderedIconButton = ({
       {children}
     </button>
   );
-};
+});
+
+BorderedIconButton.displayName = "BorderedIconButton";

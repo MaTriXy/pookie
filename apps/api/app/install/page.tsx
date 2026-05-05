@@ -130,8 +130,8 @@ const InstallPage = async ({ searchParams }: InstallPageProps) => {
 
 const CloudInstall = () => (
   <MockShell activeChannel="install">
-    <ContentPanel channelName="install">
-      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
+    <ContentPanel activeChannel="install" channelName="install">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-normal text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
           <h2 className="text-base leading-6 font-bold text-[#1d1c1d]">
             Managed
@@ -186,8 +186,8 @@ const CloudInstall = () => (
 
 const SelfHostInstall = () => (
   <MockShell activeChannel="install">
-    <ContentPanel channelName="install">
-      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
+    <ContentPanel activeChannel="install" channelName="install">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-normal text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
           <p>
             Your self-hosted Pookie is configured. Add it to a Slack workspace
@@ -226,8 +226,8 @@ const SelfHostSetupWizard = async () => {
 
   return (
     <MockShell activeChannel="install">
-      <ContentPanel channelName="install">
-        <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
+      <ContentPanel activeChannel="install" channelName="install">
+        <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-normal text-[#4d4d4d]">
           <p>
             Deployment live at <Code>{origin}</Code>. Three steps to connect
             Slack.

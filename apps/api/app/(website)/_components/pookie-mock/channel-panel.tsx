@@ -13,10 +13,10 @@ import {
 } from "react";
 
 import animations from "./animations.module.css";
-import { AudioIconButton } from "./audio-icon-button";
-import { BorderedIconButton } from "./bordered-icon-button";
-import { BellIcon, PeopleIcon, SmilePlusIcon } from "./icons";
+import { HeaderActions } from "./header-actions";
+import { SmilePlusIcon } from "./icons";
 import { Mention } from "./mention";
+import { MobileSidebarDrawer } from "./mobile-sidebar-drawer";
 import { ReactionCountButton } from "./reaction-count-button";
 import { cx, panelShadow } from "./styles";
 
@@ -42,40 +42,14 @@ const MESSAGE_BODY_INDENT_PX = 55;
 const messageBodyIndentStyle = { paddingLeft: MESSAGE_BODY_INDENT_PX };
 const SCROLL_EDGE_EPSILON_PX = 1;
 
-const HeaderActions = () => (
-  <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:mr-0 max-[520px]:gap-1.5">
-    <BorderedIconButton label="View 7 members" variant="members">
-      <span className="col-start-1 row-start-1 ml-[34px] h-6 self-center justify-self-start text-[17px] leading-6 font-medium text-[#495058]">
-        7
-      </span>
-      <PeopleIcon />
-    </BorderedIconButton>
-    <AudioIconButton />
-    <BorderedIconButton label="Notification settings" variant="bell">
-      <BellIcon />
-      <span
-        aria-hidden="true"
-        className={cx(
-          animations.notificationBadge,
-          "pointer-events-none absolute top-2 right-2",
-        )}
-      >
-        <span
-          className={cx(
-            animations.notificationBadgeDot,
-            "block h-[7px] w-[7px] rounded-full bg-[#ff3b30] shadow-[0_0_0_2px_#ffffff]",
-          )}
-        />
-      </span>
-    </BorderedIconButton>
-  </div>
-);
-
 const ChannelHeader = () => (
   <header className="mb-5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
-    <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
-      <span>#</span>
-      <span>pookie</span>
+    <div className="flex min-w-0 items-center gap-3">
+      <MobileSidebarDrawer activeChannel="pookie" />
+      <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
+        <span>#</span>
+        <span>pookie</span>
+      </div>
     </div>
     <HeaderActions />
   </header>
