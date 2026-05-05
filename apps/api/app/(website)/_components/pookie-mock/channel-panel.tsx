@@ -40,6 +40,7 @@ const TOTAL_INTRO_DURATION_MS =
 
 const MESSAGE_BODY_INDENT_PX = 55;
 const messageBodyIndentStyle = { paddingLeft: MESSAGE_BODY_INDENT_PX };
+const SCROLL_EDGE_EPSILON_PX = 1;
 
 const HeaderActions = () => (
   <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:mr-0 max-[520px]:gap-1.5">
@@ -123,7 +124,7 @@ const QuotedSearchResult = ({
   <div className="mt-1.5" style={messageBodyIndentStyle}>
     <blockquote className="border-l-[3px] border-[#dddddd] py-0.5 pl-3 text-xl leading-[25px] font-medium tracking-[-0.03em] text-[#4d4d4d] max-[520px]:text-[19px] max-[520px]:leading-6">
       <span className="block">{quote}</span>
-      <span className="mt-0.5 block text-base font-normal text-[#717274] max-[520px]:text-[15px]">
+      <span className="mt-0.5 block text-base font-medium text-[#717274] max-[520px]:text-[15px]">
         {source}
       </span>
     </blockquote>
@@ -295,6 +296,11 @@ export const ChannelPanel = () => {
   );
   const [didSkip, setDidSkip] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [scrollFadeVisibility, setScrollFadeVisibility] = useState({
+    top: false,
+    bottom: false,
+  });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -303,9 +309,28 @@ export const ChannelPanel = () => {
 
   const isIntroComplete = didSkip || (hasMounted && Boolean(hasSeenIntro));
 
+  const updateScrollFadeVisibility = useCallback(() => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    const maxScrollTop = element.scrollHeight - element.clientHeight;
+    const nextVisibility = {
+      top: element.scrollTop > SCROLL_EDGE_EPSILON_PX,
+      bottom: maxScrollTop - element.scrollTop > SCROLL_EDGE_EPSILON_PX,
+    };
+
+    setScrollFadeVisibility((currentVisibility) =>
+      currentVisibility.top === nextVisibility.top &&
+      currentVisibility.bottom === nextVisibility.bottom
+        ? currentVisibility
+        : nextVisibility,
+    );
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, []);
+    requestAnimationFrame(updateScrollFadeVisibility);
+  }, [updateScrollFadeVisibility]);
 
   const skipIntro = useCallback(() => {
     setDidSkip(true);
@@ -342,6 +367,25 @@ export const ChannelPanel = () => {
     return () => timeouts.forEach(clearTimeout);
   }, [isIntroComplete, hasMounted, scrollToBottom]);
 
+  useLayoutEffect(() => {
+    updateScrollFadeVisibility();
+  }, [isIntroComplete, updateScrollFadeVisibility]);
+
+  useEffect(() => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    updateScrollFadeVisibility();
+
+    const resizeObserver = new ResizeObserver(updateScrollFadeVisibility);
+    resizeObserver.observe(element);
+    Array.from(element.children).forEach((child) => {
+      resizeObserver.observe(child);
+    });
+
+    return () => resizeObserver.disconnect();
+  }, [updateScrollFadeVisibility]);
+
   const revealDelay = (delayMs: number) =>
     isIntroComplete ? undefined : delayMs;
 
@@ -357,16 +401,24 @@ export const ChannelPanel = () => {
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-white to-white/0"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-white to-white/0"
-        />
+        {scrollFadeVisibility.top && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-white to-white/0"
+          />
+        )}
+        {scrollFadeVisibility.bottom && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-gradient-to-t from-white to-white/0"
+          />
+        )}
 
-        <div className="h-full overflow-x-hidden overflow-y-auto pr-2 pl-[22px] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] max-[520px]:px-4">
+        <div
+          ref={scrollContainerRef}
+          onScroll={updateScrollFadeVisibility}
+          className="h-full overflow-x-hidden overflow-y-auto pr-2 pl-[22px] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] max-[520px]:px-4"
+        >
           <MessageBlock
             sender="you"
             body="what'd we ship this week?"
@@ -451,7 +503,7 @@ export const ChannelPanel = () => {
               style={messageBodyIndentStyle}
             >
               <a
-                className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-3 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
+                className="inline-flex h-[33px] items-center gap-1.5 rounded-full bg-[#007a5a] px-4 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
                 href="/api/slack/install"
                 rel="noopener noreferrer"
               >
@@ -464,7 +516,7 @@ export const ChannelPanel = () => {
                   <path fill="#fff" d={SLACK_ICON_PATH} />
                 </svg>
               </a>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#717274]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-medium text-[#717274]">
                 <a
                   className="text-[#006fa8] no-underline hover:underline"
                   href="https://github.com/millionco/pookie"
