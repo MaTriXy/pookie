@@ -75,6 +75,24 @@ const components: Components = {
       {children}
     </pre>
   ),
+  // Markdown image syntax with an .mp4 src renders as a muted, looping,
+  // inline-autoplay <video> — avoids a rehype-raw dep just to embed clips.
+  img: ({ src, alt }) => {
+    if (typeof src === "string" && src.endsWith(".mp4")) {
+      return (
+        <video
+          src={src}
+          autoPlay
+          playsInline
+          muted
+          loop
+          controls
+          className="my-3 w-full rounded-lg"
+        />
+      );
+    }
+    return <img src={src} alt={alt} className="my-3 w-full rounded-lg" />;
+  },
   ul: ({ children }) => (
     <ul className="my-3 ml-5 flex list-disc flex-col gap-1.5">{children}</ul>
   ),

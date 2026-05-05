@@ -85,6 +85,8 @@ If Slack manifest creation fails on URL verification, **Deployment Protection** 
 
 ## Deploy on Railway
 
+![Pookie Railway deploy walkthrough](/PookieRailwayDeploy.mp4)
+
 ### 1. Click the template
 
 [One-click Railway template](https://railway.com/deploy/93SQTC?utm_medium=integration&utm_source=template&utm_campaign=installation_guide). Provisions Pookie + managed Redis side by side.
