@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { useEffect, useState } from "react";
 
+import { DOCS } from "@/lib/docs";
+
 import { CHANNELS } from "./data";
 import { cx, paperItemSurface, sidebarTextBase } from "./styles";
 
@@ -25,6 +27,11 @@ export interface SidebarSubItem {
 const CHANNEL_ROW =
   "flex h-[36px] w-[188px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px]";
 
+const DEFAULT_DOC_SUB_ITEMS = Object.entries(DOCS).map(([slug, doc]) => ({
+  label: doc.sidebarLabel,
+  href: `/docs/${slug}`,
+}));
+
 let shouldAnimateNextDocsSubitems = false;
 
 const queueDocsSubitemAnimation = () => {
@@ -35,6 +42,8 @@ const ChannelRow = ({
   label,
   active = false,
   subItems,
+  staticWithSubItems = false,
+  onToggleSubItems,
   animateSubItems = false,
   subItemsAnimationKey = 0,
   onSubItemsAnimationComplete,
@@ -43,6 +52,8 @@ const ChannelRow = ({
   label: string;
   active?: boolean;
   subItems?: SidebarSubItem[];
+  staticWithSubItems?: boolean;
+  onToggleSubItems?: () => void;
   animateSubItems?: boolean;
   subItemsAnimationKey?: number;
   onSubItemsAnimationComplete?: () => void;
@@ -92,6 +103,64 @@ const ChannelRow = ({
       </span>
     </>
   );
+  const subItemLinks = subItems && subItems.length > 0 && (
+    <motion.div
+      key={subItemsAnimationKey}
+      initial={shouldAnimateSubItems ? { opacity: 0, y: -8 } : false}
+      animate={shouldAnimateSubItems ? { opacity: 1, y: 0 } : undefined}
+      transition={
+        shouldAnimateSubItems
+          ? { duration: 0.22, ease: [0.32, 0.72, 0, 1] }
+          : undefined
+      }
+      onAnimationComplete={
+        shouldAnimateSubItems ? onSubItemsAnimationComplete : undefined
+      }
+      className="mb-1 ml-[7px] flex flex-col"
+    >
+      {subItems.map((item) => {
+        const hasTopMargin = item.label === "self-hosted";
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cx(
+              "flex h-[32px] items-center gap-1.5 rounded-[9px] pl-[12px] text-[15px] font-semibold no-underline transition-colors",
+              hasTopMargin && "mt-[3px]",
+              item.active
+                ? "bg-[#f0f0f0] text-[#495058]"
+                : "text-[#888] hover:bg-black/[0.035] hover:text-[#555]",
+            )}
+          >
+            <span className="w-[11px] text-[#aaa]">#</span>
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </motion.div>
+  );
+
+  if (staticWithSubItems) {
+    return (
+      <div className="flex flex-col gap-[9px]">
+        <button
+          className={cx(
+            CHANNEL_ROW,
+            active && paperItemSurface,
+            active && "rounded-xl",
+            "cursor-pointer appearance-none border-0 bg-transparent text-left [font:inherit] hover:bg-black/[0.035]",
+          )}
+          onClick={onToggleSubItems}
+          type="button"
+        >
+          {content}
+        </button>
+        {subItemLinks}
+      </div>
+    );
+  }
 
   if (active) {
     return (
@@ -99,44 +168,7 @@ const ChannelRow = ({
         <div className={cx(CHANNEL_ROW, paperItemSurface, "rounded-xl")}>
           {content}
         </div>
-        {subItems && subItems.length > 0 && (
-          <motion.div
-            key={subItemsAnimationKey}
-            initial={shouldAnimateSubItems ? { opacity: 0, y: -8 } : false}
-            animate={shouldAnimateSubItems ? { opacity: 1, y: 0 } : undefined}
-            transition={
-              shouldAnimateSubItems
-                ? { duration: 0.22, ease: [0.32, 0.72, 0, 1] }
-                : undefined
-            }
-            onAnimationComplete={
-              shouldAnimateSubItems ? onSubItemsAnimationComplete : undefined
-            }
-            className="mb-1 ml-[7px] flex flex-col"
-          >
-            {subItems.map((item) => {
-              const hasTopMargin = item.label === "self-hosted";
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={cx(
-                    "flex h-[32px] items-center gap-1.5 rounded-[9px] pl-[12px] text-[15px] font-semibold no-underline transition-colors",
-                    hasTopMargin && "mt-[3px]",
-                    item.active
-                      ? "bg-[#f0f0f0] text-[#495058]"
-                      : "text-[#888] hover:bg-black/[0.035] hover:text-[#555]",
-                  )}
-                >
-                  <span className="w-[11px] text-[#aaa]">#</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </motion.div>
-        )}
+        {subItemLinks}
       </div>
     );
   }
@@ -145,6 +177,7 @@ const ChannelRow = ({
     return (
       <a
         href={href ?? "#"}
+        onClick={onNavigate}
         className={cx(
           CHANNEL_ROW,
           "cursor-pointer bg-transparent no-underline hover:bg-black/[0.035]",
@@ -189,6 +222,7 @@ export const Sidebar = ({
   const [shouldAnimateDocsSubitems, setShouldAnimateDocsSubitems] = useState(
     () => activeChannel === "docs" && shouldAnimateNextDocsSubitems,
   );
+  const [isDrawerDocsExpanded, setIsDrawerDocsExpanded] = useState(false);
 
   useEffect(() => {
     if (
@@ -223,18 +257,47 @@ export const Sidebar = ({
         <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold text-[#495058]">
           channels
         </div>
-        {CHANNELS.map((channel) => (
-          <ChannelRow
-            key={channel}
-            label={channel}
-            active={channel === activeChannel}
-            subItems={channel === activeChannel ? subItems : undefined}
-            animateSubItems={channel === "docs" && shouldAnimateDocsSubitems}
-            subItemsAnimationKey={subItemsAnimationKey}
-            onSubItemsAnimationComplete={completeDocsSubitemsAnimation}
-            onNavigate={onNavigate}
-          />
-        ))}
+        {CHANNELS.map((channel) => {
+          const isActiveChannel = channel === activeChannel;
+          const isStaticDrawerDocs = variant === "drawer" && channel === "docs";
+          const isDrawerDocsActive =
+            variant === "drawer" && isDrawerDocsExpanded;
+          const drawerDocSubItems = (subItems ?? DEFAULT_DOC_SUB_ITEMS).map(
+            (item) => ({
+              ...item,
+              active: false,
+            }),
+          );
+
+          return (
+            <ChannelRow
+              key={channel}
+              label={channel}
+              active={
+                isDrawerDocsActive ? isStaticDrawerDocs : isActiveChannel
+              }
+              subItems={
+                channel === "docs" && isStaticDrawerDocs
+                  ? isDrawerDocsExpanded
+                    ? drawerDocSubItems
+                    : undefined
+                  : isActiveChannel
+                    ? subItems
+                    : undefined
+              }
+              staticWithSubItems={isStaticDrawerDocs}
+              onToggleSubItems={
+                isStaticDrawerDocs
+                  ? () => setIsDrawerDocsExpanded((isExpanded) => !isExpanded)
+                  : undefined
+              }
+              animateSubItems={channel === "docs" && shouldAnimateDocsSubitems}
+              subItemsAnimationKey={subItemsAnimationKey}
+              onSubItemsAnimationComplete={completeDocsSubitemsAnimation}
+              onNavigate={onNavigate}
+            />
+          );
+        })}
       </div>
     </aside>
   );
