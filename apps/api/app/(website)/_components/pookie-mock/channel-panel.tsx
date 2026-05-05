@@ -288,9 +288,6 @@ const MessageBlock = ({
 const SLACK_ICON_PATH =
   "M27.255 80.719c0 7.33-5.978 13.317-13.309 13.317S.63 88.049.63 80.719s5.987-13.317 13.317-13.317h13.309zm6.709 0c0-7.33 5.987-13.317 13.317-13.317s13.317 5.986 13.317 13.317v33.335c0 7.33-5.986 13.317-13.317 13.317c-7.33 0-13.317-5.987-13.317-13.317zm0 0M47.281 27.255c-7.33 0-13.317-5.978-13.317-13.309S39.951.63 47.281.63s13.317 5.987 13.317 13.317v13.309zm0 6.709c7.33 0 13.317 5.987 13.317 13.317s-5.986 13.317-13.317 13.317H13.946C6.616 60.598.63 54.612.63 47.281c0-7.33 5.987-13.317 13.317-13.317zm0 0M100.745 47.281c0-7.33 5.978-13.317 13.309-13.317s13.317 5.987 13.317 13.317s-5.987 13.317-13.317 13.317h-13.309zm-6.709 0c0 7.33-5.987 13.317-13.317 13.317s-13.317-5.986-13.317-13.317V13.946C67.402 6.616 73.388.63 80.719.63c7.33 0 13.317 5.987 13.317 13.317zm0 0M80.719 100.745c7.33 0 13.317 5.978 13.317 13.309s-5.987 13.317-13.317 13.317s-13.317-5.987-13.317-13.317v-13.309zm0-6.709c-7.33 0-13.317-5.987-13.317-13.317s5.986-13.317 13.317-13.317h33.335c7.33 0 13.317 5.986 13.317 13.317c0 7.33-5.987 13.317-13.317 13.317zm0 0";
 
-const GITHUB_ICON_PATH =
-  "M64 5.103c-33.347 0-60.388 27.035-60.388 60.388c0 26.682 17.303 49.317 41.297 57.303c3.017.56 4.125-1.31 4.125-2.905c0-1.44-.056-6.197-.082-11.243c-16.8 3.653-20.345-7.125-20.345-7.125c-2.747-6.98-6.705-8.836-6.705-8.836c-5.48-3.748.413-3.67.413-3.67c6.063.425 9.257 6.223 9.257 6.223c5.386 9.23 14.127 6.562 17.573 5.02c.542-3.903 2.107-6.568 3.834-8.076c-13.413-1.525-27.514-6.704-27.514-29.843c0-6.593 2.36-11.98 6.223-16.21c-.628-1.52-2.695-7.662.584-15.98c0 0 5.07-1.623 16.61 6.19C53.7 35 58.867 34.327 64 34.304c5.13.023 10.3.694 15.127 2.033c11.526-7.813 16.59-6.19 16.59-6.19c3.287 8.317 1.22 14.46.593 15.98c3.872 4.23 6.215 9.617 6.215 16.21c0 23.194-14.127 28.3-27.574 29.796c2.167 1.874 4.097 5.55 4.097 11.183c0 8.08-.07 14.583-.07 16.572c0 1.607 1.088 3.49 4.148 2.897c23.98-7.994 41.263-30.622 41.263-57.294C124.388 32.14 97.35 5.104 64 5.104z";
-
 export const ChannelPanel = () => {
   const [hasSeenIntro, setHasSeenIntro] = useLocalStorage(
     "pookie-intro-seen",
@@ -380,7 +377,7 @@ export const ChannelPanel = () => {
             sender="pookie"
             body={
               <>
-                looks like <Mention name="nisarg" /> shipped the dashboard
+                looks like <Mention name="nisarg" href="https://x.com/nisargptel" /> shipped the dashboard
                 refresh on Tuesday:
               </>
             }
@@ -450,7 +447,7 @@ export const ChannelPanel = () => {
             revealDelayMs={revealDelay(REVEAL_DELAYS_MS[7]!)}
           >
             <div
-              className="mt-3 flex flex-wrap items-center gap-2"
+              className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2"
               style={messageBodyIndentStyle}
             >
               <a
@@ -458,7 +455,7 @@ export const ChannelPanel = () => {
                 href="/api/slack/install"
                 rel="noopener noreferrer"
               >
-                Install Pookie to Slack
+                Install Slack Bot
                 <svg
                   aria-hidden="true"
                   className="h-[15px] w-[15px] shrink-0"
@@ -467,38 +464,23 @@ export const ChannelPanel = () => {
                   <path fill="#fff" d={SLACK_ICON_PATH} />
                 </svg>
               </a>
-              <a
-                className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] border border-[#d7d7d7] bg-white px-3 text-[14px] leading-none font-semibold text-[#1d1c1d] no-underline transition-colors hover:bg-[#f8f8f8]"
-                href="mailto:founders@million.dev?subject=hi%20pookie"
-              >
-                Say hi 💌
-              </a>
-              <a
-                className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] border border-[#d7d7d7] bg-white px-3 text-[14px] leading-none font-semibold text-[#1d1c1d] no-underline transition-colors hover:bg-[#f8f8f8]"
-                href="https://github.com/millionco/pookie"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                View on GitHub
-                <svg
-                  aria-hidden="true"
-                  className="h-[15px] w-[15px] shrink-0"
-                  viewBox="0 0 128 128"
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#717274]">
+                <a
+                  className="text-[#006fa8] no-underline hover:underline"
+                  href="https://github.com/millionco/pookie"
+                  rel="noopener noreferrer"
+                  target="_blank"
                 >
-                  <path
-                    fill="#1d1c1d"
-                    fillRule="evenodd"
-                    d={GITHUB_ICON_PATH}
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </a>
-              <a
-                className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] border border-[#d7d7d7] bg-white px-3 text-[14px] leading-none font-semibold text-[#1d1c1d] no-underline transition-colors hover:bg-[#f8f8f8]"
-                href="/docs/quickstart-managed"
-              >
-                Read the docs
-              </a>
+                  github
+                </a>
+                <span aria-hidden="true">·</span>
+                <a
+                  className="text-[#006fa8] no-underline hover:underline"
+                  href="/docs/quickstart-managed"
+                >
+                  docs
+                </a>
+              </div>
             </div>
           </MessageBlock>
 
