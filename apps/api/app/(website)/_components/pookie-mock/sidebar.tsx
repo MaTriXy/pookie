@@ -5,8 +5,7 @@ import Link from "next/link";
 
 import { useEffect, useState } from "react";
 
-import { CHANNELS, DIRECT_MESSAGES } from "./data";
-import { ActiveIcon } from "./icons";
+import { CHANNELS } from "./data";
 import { cx, paperItemSurface, sidebarTextBase } from "./styles";
 
 const CHANNEL_HREFS: Record<string, string> = {
@@ -151,15 +150,6 @@ const ChannelRow = ({
   );
 };
 
-const DmRow = ({ label }: { label: string }) => (
-  <div className="flex h-[36px] w-[188px] shrink-0 cursor-pointer items-center gap-0.5 rounded-[11px] bg-transparent pl-[15px] hover:bg-black/[0.035]">
-    <ActiveIcon />
-    <span className={cx(sidebarTextBase, "min-w-[81px] text-[#495058]")}>
-      {label}
-    </span>
-  </div>
-);
-
 export const Sidebar = ({
   activeChannel = "pookie",
   subItems,
@@ -204,12 +194,6 @@ export const Sidebar = ({
             subItemsAnimationKey={subItemsAnimationKey}
             onSubItemsAnimationComplete={completeDocsSubitemsAnimation}
           />
-        ))}
-      </div>
-
-      <div className="flex w-[188px] shrink-0 flex-col gap-1 max-[1040px]:justify-end max-[1040px]:py-0">
-        {DIRECT_MESSAGES.map((directMessage) => (
-          <DmRow key={directMessage} label={directMessage} />
         ))}
       </div>
     </aside>
