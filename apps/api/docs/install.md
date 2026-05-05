@@ -94,7 +94,7 @@ cd pookie/apps/api
 #### Option 1 — Vercel (one click, includes managed Redis)
 
 ```
-https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D
+https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,SLACK_ENCRYPTION_KEY,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D
 ```
 
 The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. Vercel will ask for the remaining env-var values. We don't have the real Slack values yet — they come from B3 + B4. Use **placeholder strings** for now so env validation passes at boot:
@@ -103,6 +103,7 @@ The deploy flow automatically provisions an Upstash Redis instance and injects `
 SLACK_CLIENT_ID=placeholder
 SLACK_CLIENT_SECRET=placeholder
 SLACK_SIGNING_SECRET=placeholder
+SLACK_ENCRYPTION_KEY=<paste output of: openssl rand -hex 32>
 OPENAI_API_KEY=<paste your real OpenAI key>
 IS_SELF_DEPLOYED=true
 ```
@@ -110,6 +111,8 @@ IS_SELF_DEPLOYED=true
 `IS_SELF_DEPLOYED=true` flips `/install` from the cloud marketing flow to the post-deploy setup wizard you'll use in B3. Docker-based hosts (Railway, Fly, Render, DO, AWS Lightsail, plain `docker compose`) get this set automatically via the Dockerfile — Vercel is the only host where you set it by hand.
 
 `OPENAI_API_KEY` needs a real value from B1 — Pookie reads it at request time. `REDIS_URL` is provisioned automatically by the Upstash integration. The Slack ones can be junk strings during initial deploy because we only need `/api/slack/manifest` to work in B3, and that endpoint only reads `BASE_URL`. We'll replace the Slack placeholders with real values in B5.
+
+`SLACK_ENCRYPTION_KEY` needs a **real** generated value upfront — it's the symmetric key used to encrypt OAuth tokens and MCP credentials before they're written to Redis. Generate it once with `openssl rand -hex 32` and treat it as a long-lived secret (rotating it makes previously stored tokens undecryptable, forcing every workspace to reinstall and re-enter MCP creds).
 
 Per-workspace bot tokens (`xoxb-...`) come from OAuth when someone installs Pookie via `/api/slack/install` — there's no `SLACK_BOT_TOKEN` to configure manually.
 
@@ -119,7 +122,7 @@ Per-workspace bot tokens (`xoxb-...`) come from OAuth when someone installs Pook
 https://railway.com/deploy/93SQTC?utm_medium=integration&utm_source=template&utm_campaign=installation_guide
 ```
 
-The template provisions Pookie + Redis side-by-side. At the deploy form, fill in `OPENAI_API_KEY`. Leave the three `SLACK_*` placeholders at their defaults — they get real values in B5. `REDIS_URL` and `BASE_URL` auto-wire from Railway's variable references.
+The template provisions Pookie + Redis side-by-side. At the deploy form, fill in `OPENAI_API_KEY` and `SLACK_ENCRYPTION_KEY` (generate with `openssl rand -hex 32` — encrypts OAuth tokens and MCP creds in Redis, needs a real value upfront, not a placeholder). Leave the three `SLACK_*` placeholders at their defaults — they get real values in B5. `REDIS_URL` and `BASE_URL` auto-wire from Railway's variable references.
 
 After the build finishes (~2 min), generate a public domain: Pookie service → **Settings** → **Networking** → **Generate Domain**. Railway doesn't provision a domain by default. The URL it hands back (e.g. `pookie-production-xxxx.up.railway.app`) is what the rest of these steps refer to.
 

@@ -15,8 +15,6 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/install.md": ["./docs/install.md"],
     "/install": ["./docs/install.md"],
-    "/self-hosting.md": ["./docs/self-hosting.md"],
-    "/self-hosting": ["./docs/self-hosting.md"],
     "/docs/[slug]": [
       "./docs/quickstart-managed.md",
       "./docs/quickstart-self-hosted.md",
@@ -27,7 +25,7 @@ const nextConfig: NextConfig = {
     ],
   },
   headers: async () => {
-    const varyAccept = ["/", "/install", "/self-hosting", "/docs/:slug"];
+    const varyAccept = ["/", "/install", "/docs/:slug"];
     return [
       // so the agent can read it as markdown (text/markdown header)
       ...varyAccept.map((source) => ({
@@ -47,7 +45,6 @@ const nextConfig: NextConfig = {
     const markdownNegotiable = [
       { source: "/", destination: "/llms.txt" },
       { source: "/install", destination: "/install.md" },
-      { source: "/self-hosting", destination: "/self-hosting.md" },
       { source: "/docs/:slug", destination: "/docs/:slug/raw" },
     ];
     return {

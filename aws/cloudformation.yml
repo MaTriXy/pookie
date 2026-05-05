@@ -72,6 +72,15 @@ Parameters:
     Default: placeholder
     Description: Slack signing secret. Leave as placeholder for the first deploy.
 
+  SlackEncryptionKey:
+    Type: String
+    NoEcho: true
+    Description: >
+      Symmetric key Pookie uses to encrypt OAuth tokens and MCP credentials in
+      Redis. Generate with `openssl rand -hex 32` and treat as a long-lived
+      secret — rotating it makes existing tokens undecryptable, forcing every
+      workspace to reinstall and re-enter MCP creds.
+
 Resources:
   PookieService:
     Type: AWS::Lightsail::Container
@@ -100,6 +109,8 @@ Resources:
                 Value: !Ref SlackClientSecret
               - Variable: SLACK_SIGNING_SECRET
                 Value: !Ref SlackSigningSecret
+              - Variable: SLACK_ENCRYPTION_KEY
+                Value: !Ref SlackEncryptionKey
         PublicEndpoint:
           ContainerName: pookie
           ContainerPort: 3000

@@ -11,7 +11,6 @@ export const GET = (request: Request) => {
 ## Install
 
 - [Install guide](${origin}/install): Agent skill that walks the install end to end. Branches into managed (one-click OAuth) or self-host (~15 minutes on your own infra). The self-host branch (Path B) covers Slack app creation via the manifest URL.
-- [Self-hosting guide](${origin}/self-hosting): Host setup walkthrough across Vercel / Railway / Fly / Render / DigitalOcean / Cloud Run / AWS / Docker on a VPS.
 
 ## Docs
 

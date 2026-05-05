@@ -14,16 +14,17 @@ You'll need:
 
 ### 1. Click the deploy link
 
-Open the [Vercel deploy link](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D).
+Open the [Vercel deploy link](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,SLACK_ENCRYPTION_KEY,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D).
 
 ### 2. Fill in env vars
 
-The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. Vercel asks for the remaining env vars. Use placeholders for the three `SLACK_*` values. You'll replace them in step 5. Real values for the rest:
+The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. Vercel asks for the remaining env vars. Use placeholders for the three `SLACK_*` values (replaced in step 5). `SLACK_ENCRYPTION_KEY` needs a real generated value upfront — encrypts OAuth tokens and MCP creds in Redis. Generate it with `openssl rand -hex 32`.
 
 ```
 SLACK_CLIENT_ID=placeholder
 SLACK_CLIENT_SECRET=placeholder
 SLACK_SIGNING_SECRET=placeholder
+SLACK_ENCRYPTION_KEY=<paste output of: openssl rand -hex 32>
 OPENAI_API_KEY=sk-your-openai-key
 IS_SELF_DEPLOYED=true
 ```
@@ -90,11 +91,17 @@ If Slack manifest creation fails on URL verification, **Deployment Protection** 
 
 ### 2. Fill in env vars
 
-At the deploy form:
+At the deploy form, use placeholders for the three `SLACK_*` values (replaced in step 5). `SLACK_ENCRYPTION_KEY` needs a real generated value upfront — encrypts OAuth tokens and MCP creds in Redis. Generate it with `openssl rand -hex 32`.
 
-- Set `OPENAI_API_KEY` to your real value.
-- Leave the three `SLACK_*` placeholders alone. You'll replace them in step 5.
-- `REDIS_URL`, `BASE_URL`, and `IS_SELF_DEPLOYED` auto-wire from Railway's variable references and the Dockerfile.
+```
+SLACK_CLIENT_ID=placeholder
+SLACK_CLIENT_SECRET=placeholder
+SLACK_SIGNING_SECRET=placeholder
+SLACK_ENCRYPTION_KEY=<paste output of: openssl rand -hex 32>
+OPENAI_API_KEY=sk-your-openai-key
+```
+
+`REDIS_URL`, `BASE_URL`, and `IS_SELF_DEPLOYED` auto-wire from Railway's variable references and the Dockerfile.
 
 Click **Deploy** and wait for the build to finish.
 
@@ -181,11 +188,16 @@ export BASE_URL=https://your-tunnel-or-domain.example.com
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env`. Use placeholders for the three `SLACK_*` values (replaced in step 5). `SLACK_ENCRYPTION_KEY` needs a real generated value upfront — encrypts OAuth tokens and MCP creds in Redis. Generate it with `openssl rand -hex 32`.
 
-- `OPENAI_API_KEY`: your real OpenAI key
-- `BASE_URL`: paste the URL from step 1
-- Leave the three `SLACK_*` lines as `placeholder`. You'll replace them in step 5
+```
+SLACK_CLIENT_ID=placeholder
+SLACK_CLIENT_SECRET=placeholder
+SLACK_SIGNING_SECRET=placeholder
+SLACK_ENCRYPTION_KEY=<paste output of: openssl rand -hex 32>
+OPENAI_API_KEY=sk-your-openai-key
+BASE_URL=<paste the URL from step 1>
+```
 
 The Dockerfile sets `IS_SELF_DEPLOYED=true` automatically. The bundled `docker-compose.yml` provisions Redis on the side.
 
@@ -249,6 +261,71 @@ Click the OAuth links to connect MCP servers.
 ```
 @pookie what did we decide about the Q3 launch?
 ```
+
+## Other hosts
+
+Render, Fly.io, DigitalOcean, GCP Cloud Run, and AWS all run the same Pookie Docker image. The Slack flow (create app, copy creds, install to workspace) is identical to the Vercel/Railway sections above — only the deploy step differs. Env vars are the same everywhere:
+
+```
+SLACK_CLIENT_ID=placeholder
+SLACK_CLIENT_SECRET=placeholder
+SLACK_SIGNING_SECRET=placeholder
+SLACK_ENCRYPTION_KEY=<paste output of: openssl rand -hex 32>
+OPENAI_API_KEY=sk-your-openai-key
+```
+
+Replace the three `SLACK_*` placeholders after creating your Slack app. `SLACK_ENCRYPTION_KEY` needs a real generated value upfront — encrypts OAuth tokens and MCP creds in Redis.
+
+### Render · one-click, includes managed Redis
+
+```
+https://render.com/deploy?repo=https://github.com/millionco/pookie
+```
+
+Uses `render.yaml` to provision a Docker web service plus a managed Key Value (Redis) instance. Provide `OPENAI_API_KEY` and `SLACK_ENCRYPTION_KEY`; leave the three `SLACK_*` placeholders alone. `BASE_URL` auto-derives from `RENDER_EXTERNAL_URL` at runtime. The deployed URL looks like `https://pookie-XXXX.onrender.com`.
+
+### Fly.io · CLI, bring your own Redis
+
+```bash
+git clone https://github.com/millionco/pookie && cd pookie
+fly launch --copy-config --no-deploy   # claims app name + region
+fly redis create                       # provisions Upstash via Fly extension, sets REDIS_URL
+fly secrets set OPENAI_API_KEY=...
+fly secrets set SLACK_ENCRYPTION_KEY=$(openssl rand -hex 32)
+fly deploy
+```
+
+`BASE_URL` auto-derives from `FLY_APP_NAME` to `https://<app>.fly.dev`. Set `BASE_URL` explicitly only if you front Pookie with a custom domain.
+
+### DigitalOcean App Platform · one-click, bring your own Redis
+
+```
+https://cloud.digitalocean.com/apps/new?repo=https://github.com/millionco/pookie/tree/main
+```
+
+Uses `.do/deploy.template.yaml`. DO doesn't ship free managed Redis, so paste in an Upstash `REDIS_URL`. `BASE_URL` is wired via DO's `${APP_URL}` substitution.
+
+### GCP Cloud Run · one-click, bring your own Redis
+
+```
+https://deploy.cloud.run/?git_repo=https://github.com/millionco/pookie
+```
+
+Builds the Dockerfile via Cloud Build. Use Upstash for Redis since Memorystore needs a Serverless VPC Connector that the button can't automate. Cloud Run doesn't expose its public URL in env, so after the first deploy copy `https://<service>-<hash>.run.app` and set it as a `BASE_URL` env var on the service, then redeploy.
+
+### AWS · CloudFormation, Lightsail Containers
+
+```
+https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=pookie&templateURL=https%3A%2F%2Fraw.githubusercontent.com%2Fmillionco%2Fpookie%2Fmain%2Faws%2Fcloudformation.yml
+```
+
+Provisions a Lightsail Container Service that pulls `ghcr.io/millionco/pookie:latest`. Cheapest viable AWS deploy (~$7/mo nano), automatic HTTPS, no VPC/ALB/ACM glue. Bring an Upstash `REDIS_URL`.
+
+This is a **two-step deploy** because Lightsail's URL contains a random suffix only known after creation:
+
+1. Click Launch Stack, fill in `RedisUrl`, `OpenaiApiKey`, and `SlackEncryptionKey` (output of `openssl rand -hex 32`); leave `BaseUrl` at its placeholder. Hit Create.
+2. After ~5 min the stack reaches `CREATE_COMPLETE`. Read the `ServiceUrl` from the Outputs tab.
+3. Update the stack with `BaseUrl` = that URL. Lightsail redeploys with the right URL.
 
 ## Common issues
 

@@ -20,9 +20,9 @@ Run Pookie on your own infra. Your Slack tokens, OpenAI key, and Redis stay with
 
 #### Option 1 — Vercel (one click, includes managed Redis)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,SLACK_ENCRYPTION_KEY,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D)
 
-Easiest if you already use Vercel. The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. You'll need an `OPENAI_API_KEY`. Use placeholder strings for the three Slack values on first deploy — you'll replace them after the bundled `/install` wizard creates your Slack app. Set `IS_SELF_DEPLOYED=true` so `/install` shows the post-deploy setup wizard instead of the cloud marketing flow. (Docker-based hosts below get this automatically via the Dockerfile.)
+Easiest if you already use Vercel. The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. You'll need an `OPENAI_API_KEY` and a `SLACK_ENCRYPTION_KEY` (generate with `openssl rand -hex 32` — encrypts OAuth tokens and MCP creds in Redis). Use placeholder strings for the three Slack values on first deploy — you'll replace them after the bundled `/install` wizard creates your Slack app. Set `IS_SELF_DEPLOYED=true` so `/install` shows the post-deploy setup wizard instead of the cloud marketing flow. (Docker-based hosts below get this automatically via the Dockerfile.)
 
 #### Option 2 — Railway (one click, includes managed Redis)
 
