@@ -8,7 +8,7 @@ import { slackBot } from "@/server/bot";
 
 type Platform = keyof typeof slackBot.webhooks;
 
-export const maxDuration = 799;
+export const maxDuration = 300;
 
 export async function POST(
   request: Request,
