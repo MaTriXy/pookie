@@ -24,8 +24,8 @@ export interface SidebarSubItem {
   children?: Array<{ label: string; href: string }>;
 }
 
-const CHANNEL_ROW =
-  "flex h-[36px] w-[188px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px]";
+const CHANNEL_ROW_BASE =
+  "flex h-[36px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px]";
 
 const DEFAULT_DOC_SUB_ITEMS = Object.entries(DOCS).map(([slug, doc]) => ({
   label: doc.sidebarLabel,
@@ -44,6 +44,7 @@ const ChannelRow = ({
   subItems,
   staticWithSubItems = false,
   onToggleSubItems,
+  fullWidth = false,
   animateSubItems = false,
   subItemsAnimationKey = 0,
   onSubItemsAnimationComplete,
@@ -54,6 +55,7 @@ const ChannelRow = ({
   subItems?: SidebarSubItem[];
   staticWithSubItems?: boolean;
   onToggleSubItems?: () => void;
+  fullWidth?: boolean;
   animateSubItems?: boolean;
   subItemsAnimationKey?: number;
   onSubItemsAnimationComplete?: () => void;
@@ -63,6 +65,11 @@ const ChannelRow = ({
   const isExternal = href?.startsWith("http");
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimateSubItems = animateSubItems && !prefersReducedMotion;
+  const rowClassName = cx(
+    CHANNEL_ROW_BASE,
+    fullWidth ? "w-full" : "w-[188px]",
+  );
+  const rowStackClassName = "flex flex-col gap-[5px]";
 
   const content = (
     <>
@@ -144,10 +151,10 @@ const ChannelRow = ({
 
   if (staticWithSubItems) {
     return (
-      <div className="flex flex-col gap-[9px]">
+      <div className={rowStackClassName}>
         <button
           className={cx(
-            CHANNEL_ROW,
+            rowClassName,
             active && paperItemSurface,
             active && "rounded-xl",
             "cursor-pointer appearance-none border-0 bg-transparent text-left [font:inherit] hover:bg-black/[0.035]",
@@ -164,8 +171,8 @@ const ChannelRow = ({
 
   if (active) {
     return (
-      <div className="flex flex-col gap-[9px]">
-        <div className={cx(CHANNEL_ROW, paperItemSurface, "rounded-xl")}>
+      <div className={rowStackClassName}>
+        <div className={cx(rowClassName, paperItemSurface, "rounded-xl")}>
           {content}
         </div>
         {subItemLinks}
@@ -179,7 +186,7 @@ const ChannelRow = ({
         href={href ?? "#"}
         onClick={onNavigate}
         className={cx(
-          CHANNEL_ROW,
+          rowClassName,
           "cursor-pointer bg-transparent no-underline hover:bg-black/[0.035]",
         )}
         target="_blank"
@@ -198,7 +205,7 @@ const ChannelRow = ({
         onNavigate?.();
       }}
       className={cx(
-        CHANNEL_ROW,
+        rowClassName,
         "cursor-pointer bg-transparent no-underline hover:bg-black/[0.035]",
       )}
     >
@@ -222,7 +229,9 @@ export const Sidebar = ({
   const [shouldAnimateDocsSubitems, setShouldAnimateDocsSubitems] = useState(
     () => activeChannel === "docs" && shouldAnimateNextDocsSubitems,
   );
-  const [isDrawerDocsExpanded, setIsDrawerDocsExpanded] = useState(false);
+  const [isDrawerDocsExpanded, setIsDrawerDocsExpanded] = useState(
+    () => variant === "drawer" && activeChannel === "docs",
+  );
 
   useEffect(() => {
     if (
@@ -234,6 +243,11 @@ export const Sidebar = ({
       setSubItemsAnimationKey((key) => key + 1);
     }
   }, [activeChannel, shouldAnimateDocsSubitems]);
+
+  useEffect(() => {
+    if (variant !== "drawer") return;
+    setIsDrawerDocsExpanded(activeChannel === "docs");
+  }, [activeChannel, variant]);
 
   const completeDocsSubitemsAnimation = () => {
     shouldAnimateNextDocsSubitems = false;
@@ -250,11 +264,16 @@ export const Sidebar = ({
     >
       <div
         className={cx(
-          "flex w-[188px] shrink-0 flex-col gap-1",
-          variant === "drawer" ? "mt-0" : "mt-[30px]",
+          "flex shrink-0 flex-col gap-1",
+          variant === "drawer" ? "mt-0 w-full" : "mt-[30px] w-[188px]",
         )}
       >
-        <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold text-[#495058]">
+        <div
+          className={cx(
+            "mb-3 flex h-6 items-center pl-[7px] text-lg leading-6 font-semibold text-[#495058]",
+            variant === "drawer" ? "w-full" : "w-[188px]",
+          )}
+        >
           channels
         </div>
         {CHANNELS.map((channel) => {
@@ -286,6 +305,7 @@ export const Sidebar = ({
                     : undefined
               }
               staticWithSubItems={isStaticDrawerDocs}
+              fullWidth={variant === "drawer"}
               onToggleSubItems={
                 isStaticDrawerDocs
                   ? () => setIsDrawerDocsExpanded((isExpanded) => !isExpanded)
