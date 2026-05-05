@@ -1,0 +1,25 @@
+node_modules
+.turbo
+.DS_Store
+.env
+.env.local
+.env.*.local
+dist
+build
+.next
+**/*.tgz
+coverage
+test-results
+playwright-report
+.vercel
+.cursor/debug.log
+.cursor
+.claude
+meta.json
+.mcp.json
+*.log
+.env*.local
+
+# local block-kit / slack message preview scripts that contain bot tokens
+onboarding-test.sh
+onboarding-dm.sh

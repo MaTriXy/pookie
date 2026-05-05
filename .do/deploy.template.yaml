@@ -1,0 +1,39 @@
+# DigitalOcean App Platform spec — drives the "Deploy to DO" button in README.
+# DO App Platform doesn't ship managed Redis on the dev/free tier, so we treat
+# REDIS_URL as a user-provided secret (Upstash free tier is the recommended
+# path). BASE_URL uses DO's ${APP_URL} interpolation so the public URL is wired
+# up automatically on first deploy.
+spec:
+  name: pookie
+  features:
+    - buildpack-stack=ubuntu-22
+  services:
+    - name: web
+      dockerfile_path: Dockerfile
+      source_dir: /
+      http_port: 3000
+      health_check:
+        http_path: /api/health
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      envs:
+        - key: OPENAI_API_KEY
+          scope: RUN_TIME
+          type: SECRET
+        - key: REDIS_URL
+          scope: RUN_TIME
+          type: SECRET
+        - key: SLACK_CLIENT_ID
+          scope: RUN_TIME
+          value: placeholder
+        - key: SLACK_CLIENT_SECRET
+          scope: RUN_TIME
+          type: SECRET
+          value: placeholder
+        - key: SLACK_SIGNING_SECRET
+          scope: RUN_TIME
+          type: SECRET
+          value: placeholder
+        - key: BASE_URL
+          scope: RUN_TIME
+          value: ${APP_URL}
