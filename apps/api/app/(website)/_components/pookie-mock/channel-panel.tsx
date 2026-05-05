@@ -52,7 +52,7 @@ const messageBodyIndentStyle = { paddingLeft: MESSAGE_BODY_INDENT_PX };
 const SCROLL_EDGE_EPSILON_PX = 1;
 
 const ChannelHeader = () => (
-  <header className="mb-1.5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
+  <header className="mb-1.5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3 max-[1040px]:mb-5">
     <div className="flex min-w-0 items-center gap-3">
       <MobileSidebarDrawer activeChannel="pookie" />
       <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
@@ -399,7 +399,7 @@ export const ChannelPanel = () => {
         "relative flex h-[calc(100svh-clamp(48px,10vh,112px)-165px)] w-[720px] max-w-full flex-[0_0_auto] shrink flex-col overflow-hidden rounded-[18px] bg-white max-[920px]:h-auto max-[920px]:w-full max-[920px]:min-w-0 max-[920px]:basis-auto",
       )}
     >
-      <div className="shrink-0 bg-white pt-5 pr-2 pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
+      <div className="shrink-0 bg-white pt-5 pr-2 pl-[25px] max-[520px]:pr-4 max-[520px]:pl-[19px] max-[520px]:pt-4">
         <ChannelHeader />
       </div>
 

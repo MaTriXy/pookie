@@ -487,7 +487,7 @@ export const ComposerPanel = () => (
   <div
     className={cx(
       composerShadow,
-      "flex w-[720px] max-w-full shrink-0 flex-col rounded-[14px] bg-white pt-3 pr-1.5 pb-1.5 pl-1.5 transition-shadow focus-within:[box-shadow:#1264a3_0px_0px_0px_1px,#00000008_0px_2px_24px,#00000003_0px_4px_4px,#00000003_0px_2px_2px]",
+      "flex w-[720px] max-w-full shrink-0 flex-col rounded-[14px] bg-white pt-3 pr-1.5 pb-1.5 pl-1.5 focus-within:[box-shadow:#1264a3_0px_0px_0px_1.5px,#00000008_0px_2px_24px,#00000003_0px_4px_4px,#00000003_0px_2px_2px]",
     )}
   >
     <LexicalComposer

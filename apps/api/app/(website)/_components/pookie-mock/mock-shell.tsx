@@ -51,7 +51,7 @@ export const ContentPanel = ({
     )}
   >
     <div className="shrink-0 bg-white pt-5 pr-2 pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
-      <header className="mb-1.5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
+      <header className="mb-1.5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3 max-[1040px]:mb-5">
         <div className="flex min-w-0 items-center gap-3">
           <MobileSidebarDrawer
             activeChannel={activeChannel}
