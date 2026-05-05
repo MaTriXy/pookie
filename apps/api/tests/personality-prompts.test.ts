@@ -43,14 +43,15 @@ describe("renderPersonalitySection", () => {
       }
     });
 
-    it(`'${personality}' enforces the lowercase formatting rule`, () => {
+    it(`'${personality}' enforces a casing rule`, () => {
       const rendered = renderPersonalitySection(personality);
-      expect(rendered).toMatch(/lowercase/i);
+      expect(rendered).toMatch(/lowercase|casing/i);
     });
 
-    it(`'${personality}' bans Markdown bold and italics for chat replies`, () => {
+    it(`'${personality}' includes bold usage guidance and bans italics`, () => {
       const rendered = renderPersonalitySection(personality);
-      expect(rendered).toMatch(/markdown bold/i);
+      expect(rendered).toMatch(/bold/i);
+      expect(rendered).toMatch(/skip italics/i);
     });
   }
 });
