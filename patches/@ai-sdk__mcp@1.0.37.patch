@@ -1,0 +1,185 @@
+diff --git a/dist/index.js b/dist/index.js
+index 44228946660cd4d66d2c745b7317d5438e381d88..492afd116d5231b25105204b591a4a34838aa992 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1097,9 +1097,11 @@ var SseMCPTransport = class {
+   async commonHeaders(base) {
+     const headers = {
+       ...this.headers,
+-      ...base,
+-      "mcp-protocol-version": LATEST_PROTOCOL_VERSION
++      ...base
+     };
++    if (this.protocolVersion) {
++      headers["mcp-protocol-version"] = this.protocolVersion;
++    }
+     if (this.authProvider) {
+       const tokens = await this.authProvider.tokens();
+       if (tokens == null ? void 0 : tokens.access_token) {
+@@ -1313,9 +1315,11 @@ var HttpMCPTransport = class {
+   async commonHeaders(base) {
+     const headers = {
+       ...this.headers,
+-      ...base,
+-      "mcp-protocol-version": LATEST_PROTOCOL_VERSION
++      ...base
+     };
++    if (this.protocolVersion) {
++      headers["mcp-protocol-version"] = this.protocolVersion;
++    }
+     if (this.sessionId) {
+       headers["mcp-session-id"] = this.sessionId;
+     }
+@@ -1729,6 +1733,9 @@ var DefaultMCPClient = class {
+       }
+       this.serverCapabilities = result.capabilities;
+       this._serverInfo = result.serverInfo;
++      if (this.transport) {
++        this.transport.protocolVersion = result.protocolVersion;
++      }
+       await this.notification({
+         method: "notifications/initialized"
+       });
+diff --git a/dist/index.mjs b/dist/index.mjs
+index b781835b37a1262510bdd66d8d3b399a076e9d68..80076350444920f575fa22fb7d444fb1dacf1483 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1067,9 +1067,11 @@ var SseMCPTransport = class {
+   async commonHeaders(base) {
+     const headers = {
+       ...this.headers,
+-      ...base,
+-      "mcp-protocol-version": LATEST_PROTOCOL_VERSION
++      ...base
+     };
++    if (this.protocolVersion) {
++      headers["mcp-protocol-version"] = this.protocolVersion;
++    }
+     if (this.authProvider) {
+       const tokens = await this.authProvider.tokens();
+       if (tokens == null ? void 0 : tokens.access_token) {
+@@ -1287,9 +1289,11 @@ var HttpMCPTransport = class {
+   async commonHeaders(base) {
+     const headers = {
+       ...this.headers,
+-      ...base,
+-      "mcp-protocol-version": LATEST_PROTOCOL_VERSION
++      ...base
+     };
++    if (this.protocolVersion) {
++      headers["mcp-protocol-version"] = this.protocolVersion;
++    }
+     if (this.sessionId) {
+       headers["mcp-session-id"] = this.sessionId;
+     }
+@@ -1703,6 +1707,9 @@ var DefaultMCPClient = class {
+       }
+       this.serverCapabilities = result.capabilities;
+       this._serverInfo = result.serverInfo;
++      if (this.transport) {
++        this.transport.protocolVersion = result.protocolVersion;
++      }
+       await this.notification({
+         method: "notifications/initialized"
+       });
+diff --git a/src/tool/mcp-client.ts b/src/tool/mcp-client.ts
+index abb79264968bf6440af3a9e1a4f414a1818dfacd..fb6521611f9e24a9a9a3c9cc2b1de750834f5d20 100644
+--- a/src/tool/mcp-client.ts
++++ b/src/tool/mcp-client.ts
+@@ -291,6 +291,10 @@ class DefaultMCPClient implements MCPClient {
+       this.serverCapabilities = result.capabilities;
+       this._serverInfo = result.serverInfo;
+ 
++      if (this.transport) {
++        this.transport.protocolVersion = result.protocolVersion;
++      }
++
+       // Complete initialization handshake:
+       await this.notification({
+         method: 'notifications/initialized',
+diff --git a/src/tool/mcp-http-transport.ts b/src/tool/mcp-http-transport.ts
+index 4fc5c634a3f19f9e8e7e6dbaee34d3218abab9fc..1173bb11d9b58bd83ff81d8c0b810dc2c4791a5a 100644
+--- a/src/tool/mcp-http-transport.ts
++++ b/src/tool/mcp-http-transport.ts
+@@ -14,7 +14,6 @@ import {
+   UnauthorizedError,
+   auth,
+ } from './oauth';
+-import { LATEST_PROTOCOL_VERSION } from './types';
+ 
+ /**
+  * HTTP MCP transport implementing the Streamable HTTP style.
+@@ -33,6 +32,7 @@ export class HttpMCPTransport implements MCPTransport {
+   private inboundSseConnection?: { close: () => void };
+   private redirectMode: RequestRedirect;
+   private fetchFn: FetchFunction;
++  protocolVersion?: string;
+ 
+   // Inbound SSE resumption and reconnection state
+   private lastInboundEventId?: string;
+@@ -74,9 +74,12 @@ export class HttpMCPTransport implements MCPTransport {
+     const headers: Record<string, string> = {
+       ...this.headers,
+       ...base,
+-      'mcp-protocol-version': LATEST_PROTOCOL_VERSION,
+     };
+ 
++    if (this.protocolVersion) {
++      headers['mcp-protocol-version'] = this.protocolVersion;
++    }
++
+     if (this.sessionId) {
+       headers['mcp-session-id'] = this.sessionId;
+     }
+diff --git a/src/tool/mcp-sse-transport.ts b/src/tool/mcp-sse-transport.ts
+index e99d9970326a02e49c33a859325e6bfa63d064e1..79bd0467f93d45676ae14a8206ac677de31f1f9c 100644
+--- a/src/tool/mcp-sse-transport.ts
++++ b/src/tool/mcp-sse-transport.ts
+@@ -14,8 +14,6 @@ import {
+   UnauthorizedError,
+   auth,
+ } from './oauth';
+-import { LATEST_PROTOCOL_VERSION } from './types';
+-
+ export class SseMCPTransport implements MCPTransport {
+   private endpoint?: URL;
+   private abortController?: AbortController;
+@@ -29,6 +27,7 @@ export class SseMCPTransport implements MCPTransport {
+   private resourceMetadataUrl?: URL;
+   private redirectMode: RequestRedirect;
+   private fetchFn: FetchFunction;
++  protocolVersion?: string;
+ 
+   onclose?: () => void;
+   onerror?: (error: unknown) => void;
+@@ -60,9 +59,12 @@ export class SseMCPTransport implements MCPTransport {
+     const headers: Record<string, string> = {
+       ...this.headers,
+       ...base,
+-      'mcp-protocol-version': LATEST_PROTOCOL_VERSION,
+     };
+ 
++    if (this.protocolVersion) {
++      headers['mcp-protocol-version'] = this.protocolVersion;
++    }
++
+     if (this.authProvider) {
+       const tokens = await this.authProvider.tokens();
+       if (tokens?.access_token) {
+diff --git a/src/tool/mcp-transport.ts b/src/tool/mcp-transport.ts
+index 0861e9bd8fc23deadfcd7d936335065cd2731ef6..c73154e2e73b22225a87cfcda5cf1edd80676ad1 100644
+--- a/src/tool/mcp-transport.ts
++++ b/src/tool/mcp-transport.ts
+@@ -40,6 +40,12 @@ export interface MCPTransport {
+    * Event handler for received messages
+    */
+   onmessage?: (message: JSONRPCMessage) => void;
++
++  /**
++   * Negotiated protocol version, set by the client after initialize.
++   * Omitted from the header until negotiation completes.
++   */
++  protocolVersion?: string;
+ }
+ 
+ export type MCPTransportConfig = {

@@ -1,0 +1,29 @@
+# Fly.io config — the user runs `fly launch --copy-config --no-deploy`, which
+# claims an app name and region, then `fly deploy`. Redis is BYO; recommended
+# path is `fly redis create` (Upstash extension) which auto-injects REDIS_URL.
+# BASE_URL is derived from FLY_APP_NAME at runtime, so no manual env needed for
+# the default *.fly.dev hostname.
+app = "pookie"
+primary_region = "iad"
+
+[build]
+dockerfile = "Dockerfile"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_stop_machines = "stop"
+auto_start_machines = true
+min_machines_running = 0
+processes = ["app"]
+
+[[http_service.checks]]
+interval = "30s"
+timeout = "5s"
+grace_period = "10s"
+method = "GET"
+path = "/api/health"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"

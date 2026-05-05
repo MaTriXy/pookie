@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Pookie on AWS Lightsail Container Service. Pulls the published GHCR image,
+  provisions a managed HTTPS endpoint, and runs a single nano container. Bring
+  your own Redis (Upstash free tier recommended) — Lightsail does not offer
+  managed Redis, and provisioning ElastiCache would require a VPC + subnets +
+  security groups, which defeats the point of a one-click deploy.
+
+  Two-step deploy: Lightsail assigns a random URL to the container service that
+  is only known after creation. On first deploy leave BaseUrl at its default
+  placeholder; once the stack reaches CREATE_COMPLETE, read the ServiceUrl
+  output and update the stack with BaseUrl set to that value. The container
+  redeploys automatically with the corrected URL.
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: pookie
+    Description: Name for the Lightsail Container Service. Lowercase, hyphens allowed.
+    AllowedPattern: "^[a-z][a-z0-9-]{1,62}$"
+
+  ContainerPower:
+    Type: String
+    Default: nano
+    Description: Lightsail container power. nano is ~$7/mo and adequate for low-volume workspaces; bump up for larger teams.
+    AllowedValues:
+      - nano
+      - micro
+      - small
+      - medium
+      - large
+      - xlarge
+
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: Tag of ghcr.io/millionco/pookie to deploy. Pin to a sha-XXXXXXX tag for reproducibility.
+
+  BaseUrl:
+    Type: String
+    Default: https://replace-after-first-deploy.invalid
+    Description: >
+      Public URL Pookie advertises to Slack. After the first stack deploy, copy
+      the ServiceUrl output and update this stack parameter with that value.
+      If you've configured a custom domain on the Lightsail service, set BaseUrl
+      to that domain instead and skip the two-step.
+
+  RedisUrl:
+    Type: String
+    NoEcho: true
+    Description: Redis connection URL. Use Upstash (https://upstash.com) free tier — paste the rediss:// URL.
+
+  OpenaiApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenAI API key (https://platform.openai.com/api-keys). Required.
+
+  SlackClientId:
+    Type: String
+    Default: placeholder
+    Description: Slack app client ID. Leave as placeholder for the first deploy, replace via /api/slack/manifest flow.
+
+  SlackClientSecret:
+    Type: String
+    NoEcho: true
+    Default: placeholder
+    Description: Slack app client secret. Leave as placeholder for the first deploy.
+
+  SlackSigningSecret:
+    Type: String
+    NoEcho: true
+    Default: placeholder
+    Description: Slack signing secret. Leave as placeholder for the first deploy.
+
+Resources:
+  PookieService:
+    Type: AWS::Lightsail::Container
+    Properties:
+      ServiceName: !Ref ServiceName
+      Power: !Ref ContainerPower
+      Scale: 1
+      IsDisabled: false
+      ContainerServiceDeployment:
+        Containers:
+          - ContainerName: pookie
+            Image: !Sub "ghcr.io/millionco/pookie:${ImageTag}"
+            Ports:
+              - Port: "3000"
+                Protocol: HTTP
+            Environment:
+              - Variable: BASE_URL
+                Value: !Ref BaseUrl
+              - Variable: REDIS_URL
+                Value: !Ref RedisUrl
+              - Variable: OPENAI_API_KEY
+                Value: !Ref OpenaiApiKey
+              - Variable: SLACK_CLIENT_ID
+                Value: !Ref SlackClientId
+              - Variable: SLACK_CLIENT_SECRET
+                Value: !Ref SlackClientSecret
+              - Variable: SLACK_SIGNING_SECRET
+                Value: !Ref SlackSigningSecret
+        PublicEndpoint:
+          ContainerName: pookie
+          ContainerPort: 3000
+          HealthCheck:
+            Path: /api/health
+            SuccessCodes: "200-299"
+            IntervalSeconds: 30
+            TimeoutSeconds: 5
+            HealthyThreshold: 2
+            UnhealthyThreshold: 3
+
+Outputs:
+  ServiceUrl:
+    Description: Public HTTPS URL for Pookie. Paste this back into the BaseUrl stack parameter and update the stack.
+    Value: !GetAtt PookieService.Url
+
+  NextSteps:
+    Description: What to do after this stack reaches CREATE_COMPLETE.
+    Value: !Sub "1) Copy the ServiceUrl output above. 2) Update this stack and set BaseUrl=<that URL>. 3) Visit <ServiceUrl>/api/slack/manifest to wire up your Slack app."

@@ -1,0 +1,30 @@
+# Render Blueprint — provisions Pookie + a managed Key Value (Redis) instance.
+# Triggered by the "Deploy to Render" button in README.md and by manual blueprint
+# syncs from the Render dashboard. Web service auto-derives BASE_URL from
+# RENDER_EXTERNAL_URL at runtime, so users only need to provide AI + Slack secrets.
+services:
+  - type: web
+    name: pookie
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SLACK_CLIENT_ID
+        value: placeholder
+      - key: SLACK_CLIENT_SECRET
+        value: placeholder
+      - key: SLACK_SIGNING_SECRET
+        value: placeholder
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: pookie-redis
+          property: connectionString
+
+  - type: keyvalue
+    name: pookie-redis
+    plan: free
+    ipAllowList: []

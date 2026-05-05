@@ -1,0 +1,55 @@
+{
+  "name": "@pookiebot/monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
+    "check": "vp check",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@types/node": "^25.6.0",
+    "@voidzero-dev/vite-plus-core": "^0.1.19",
+    "@voidzero-dev/vite-plus-test": "^0.1.19",
+    "turbo": "^2.9.6",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.1.19"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "sharp",
+      "spawn-sync",
+      "unrs-resolver"
+    ],
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.19",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@^0.1.19"
+    },
+    "patchedDependencies": {
+      "@ai-sdk/mcp@1.0.37": "patches/@ai-sdk__mcp@1.0.37.patch",
+      "@chat-adapter/slack@4.26.0": "patches/@chat-adapter__slack@4.26.0.patch",
+      "chat@4.26.0": "patches/chat@4.26.0.patch"
+    }
+  }
+}

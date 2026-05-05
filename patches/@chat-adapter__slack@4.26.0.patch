@@ -1,0 +1,61 @@
+diff --git a/dist/index.js b/dist/index.js
+index 48c245309ea4468b13c83f1d33953cd85195e679..c07e535f802b70020d4d44d14c0908790b11558d 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1175,7 +1175,8 @@ var SlackAdapter = class _SlackAdapter {
+       } else if (event.type === "member_joined_channel") {
+         this.handleMemberJoinedChannel(
+           event,
+-          options
++          options,
++          payload.team_id
+         );
+       } else if (event.type === "user_change") {
+         this.handleUserChange(event);
+@@ -1446,9 +1447,16 @@ var SlackAdapter = class _SlackAdapter {
+       this.logger.warn("Chat instance not initialized, ignoring event");
+       return;
+     }
++    if (event.subtype === "message_deleted" && event.channel && event.deleted_ts) {
++      this.chat.processMessageDeleted({
++        channelId: event.channel,
++        deletedTs: event.deleted_ts,
++        adapter: this
++      }, options);
++      return;
++    }
+     const ignoredSubtypes = /* @__PURE__ */ new Set([
+       "message_changed",
+-      "message_deleted",
+       "message_replied",
+       "channel_join",
+       "channel_leave",
+@@ -1665,7 +1673,7 @@ var SlackAdapter = class _SlackAdapter {
+    * Handle member_joined_channel events from Slack.
+    * Fires when a user (including the bot) joins a channel.
+    */
+-  handleMemberJoinedChannel(event, options) {
++  handleMemberJoinedChannel(event, options, teamId) {
+     if (!this.chat) {
+       this.logger.warn(
+         "Chat instance not initialized, ignoring member_joined_channel"
+@@ -1680,6 +1688,7 @@ var SlackAdapter = class _SlackAdapter {
+           threadTs: ""
+         }),
+         inviterId: event.inviter,
++        teamId,
+         adapter: this
+       },
+       options
+@@ -1786,8 +1795,9 @@ var SlackAdapter = class _SlackAdapter {
+     if (userIds.size === 0 && channelIds.size === 0) {
+       return text;
+     }
+-    if (skipSelfMention && this._botUserId) {
+-      userIds.delete(this._botUserId);
++    const effectiveBotUserId = this.botUserId ?? this._botUserId;
++    if (skipSelfMention && effectiveBotUserId) {
++      userIds.delete(effectiveBotUserId);
+     }
+     if (userIds.size === 0 && channelIds.size === 0) {
+       return text;

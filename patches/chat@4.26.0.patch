@@ -1,0 +1,91 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 35c50a404b9822f8ec5c9ad6088d0ea711cba804..4b7062427ab4839e013efe186a3e356cafa23147 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -2070,9 +2070,16 @@ interface MemberJoinedChannelEvent {
+     adapter: Adapter;
+     channelId: string;
+     inviterId?: string;
++    teamId?: string;
+     userId: string;
+ }
+ type MemberJoinedChannelHandler = (event: MemberJoinedChannelEvent) => void | Promise<void>;
++interface MessageDeletedEvent {
++    adapter: Adapter;
++    channelId: string;
++    deletedTs: string;
++}
++type MessageDeletedHandler = (event: MessageDeletedEvent) => void | Promise<void>;
+ 
+ /**
+  * Message class with serialization support for workflow engines.
+@@ -2657,6 +2664,7 @@ declare class Chat<TAdapters extends Record<string, Adapter> = Record<string, Ad
+     onAssistantContextChanged(handler: AssistantContextChangedHandler): void;
+     onAppHomeOpened(handler: AppHomeOpenedHandler): void;
+     onMemberJoinedChannel(handler: MemberJoinedChannelHandler): void;
++    onMessageDeleted(handler: MessageDeletedHandler): void;
+     /**
+      * Get an adapter by name with type safety.
+      */
+@@ -2715,6 +2723,7 @@ declare class Chat<TAdapters extends Record<string, Adapter> = Record<string, Ad
+     processAssistantContextChanged(event: AssistantContextChangedEvent, options?: WebhookOptions): void;
+     processAppHomeOpened(event: AppHomeOpenedEvent, options?: WebhookOptions): void;
+     processMemberJoinedChannel(event: MemberJoinedChannelEvent, options?: WebhookOptions): void;
++    processMessageDeleted(event: MessageDeletedEvent, options?: WebhookOptions): void;
+     /**
+      * Handle a slash command event internally.
+      */
+@@ -3396,4 +3405,4 @@ declare const Select: SelectComponent;
+ declare const SelectOption: SelectOptionComponent;
+ declare const TextInput: TextInputComponent;
+ 
+-export { type ActionEvent, type ActionHandler, Actions, ActionsComponent, type Adapter, type AdapterPostableMessage, type AddTaskOptions, type AiAssistantMessage, type AiFilePart, type AiImagePart, type AiMessage, type AiMessagePart, type AiTextPart, type AiUserMessage, type AppHomeOpenedEvent, type AppHomeOpenedHandler, type AssistantContextChangedEvent, type AssistantContextChangedHandler, type AssistantThreadStartedEvent, type AssistantThreadStartedHandler, type Attachment, type Author, BaseFormatConverter, Button, ButtonComponent, Card, CardChild, CardComponent, CardElement, CardLink, CardLinkComponent, CardText, type Channel, ChannelImpl, type ChannelInfo, type ChannelVisibility, Chat, type ChatConfig, ChatElement, ChatError, type ChatInstance, type CompletePlanOptions, type ConcurrencyConfig, type ConcurrencyStrategy, ConsoleLogger, type CustomEmojiMap, DEFAULT_EMOJI_MAP, type DirectMessageHandler, Divider, DividerComponent, type Emoji, type EmojiFormats, type EmojiMapConfig, EmojiResolver, type EmojiValue, type EphemeralMessage, type FetchDirection, type FetchOptions, type FetchResult, Field, FieldComponent, Fields, FieldsComponent, type FileUpload, type FormatConverter, type FormattedContent, Image, ImageComponent, LinkButton, LinkButtonComponent, type LinkPreview, type ListThreadsOptions, type ListThreadsResult, type Lock, LockError, type LockScope, type LockScopeContext, type LogLevel, type Logger, type MarkdownConverter, type MarkdownTextChunk, type MemberJoinedChannelEvent, type MemberJoinedChannelHandler, type MentionHandler, Message, type MessageContext, type MessageData, type MessageHandler, MessageHistoryCache, type MessageHistoryConfig, type MessageMetadata, Modal, type ModalCloseEvent, type ModalCloseHandler, type ModalCloseResponse, ModalComponent, ModalElement, type ModalErrorsResponse, type ModalPushResponse, type ModalResponse, type ModalSubmitEvent, type ModalSubmitHandler, type ModalUpdateResponse, NotImplementedError, Plan, type PlanContent, type PlanModel, type PlanModelTask, type PlanTask, type PlanTaskStatus, type PlanUpdateChunk, type PostEphemeralOptions, type Postable, type PostableAst, type PostableCard, type PostableMarkdown, type PostableMessage, type PostableObject, type PostableObjectContext, type PostableRaw, type QueueEntry, RadioSelect, RadioSelectComponent, RateLimitError, type RawMessage, type ReactionEvent, type ReactionHandler, type ScheduledMessage, Section, SectionComponent, Select, SelectComponent, SelectOption, SelectOptionComponent, type SentMessage, type SerializedChannel, type SerializedMessage, type SerializedThread, type SlashCommandEvent, type SlashCommandHandler, type StartPlanOptions, type StateAdapter, type StreamChunk, type StreamEvent, type StreamOptions, StreamingMarkdownRenderer, type SubscribedMessageHandler, THREAD_STATE_TTL_MS, Table, type TaskUpdateChunk, TextComponent, TextInput, TextInputComponent, type Thread, ThreadImpl, type ThreadInfo, type ThreadSummary, type UpdateTaskInput, type WebhookOptions, type WellKnownEmoji, blockquote, cardChildToFallbackText, codeBlock, convertEmojiPlaceholders, createEmoji, defaultEmojiResolver, deriveChannelId, emoji, emphasis, fromFullStream, fromReactElement, fromReactModalElement, getEmoji, getNodeChildren, getNodeValue, inlineCode, isBlockquoteNode, isCardElement, isCodeNode, isDeleteNode, isEmphasisNode, isInlineCodeNode, isJSX, isLinkNode, isListItemNode, isListNode, isModalElement, isParagraphNode, isPostableObject, isStrongNode, isTableCellNode, isTableNode, isTableRowNode, isTextNode, link, markdownToPlainText, paragraph, parseMarkdown, reviver, root, strikethrough, stringifyMarkdown, strong, tableElementToAscii, tableToAscii, text, toAiMessages, toCardElement, toModalElement, toPlainText, walkAst };
++export { type ActionEvent, type ActionHandler, Actions, ActionsComponent, type Adapter, type AdapterPostableMessage, type AddTaskOptions, type AiAssistantMessage, type AiFilePart, type AiImagePart, type AiMessage, type AiMessagePart, type AiTextPart, type AiUserMessage, type AppHomeOpenedEvent, type AppHomeOpenedHandler, type AssistantContextChangedEvent, type AssistantContextChangedHandler, type AssistantThreadStartedEvent, type AssistantThreadStartedHandler, type Attachment, type Author, BaseFormatConverter, Button, ButtonComponent, Card, CardChild, CardComponent, CardElement, CardLink, CardLinkComponent, CardText, type Channel, ChannelImpl, type ChannelInfo, type ChannelVisibility, Chat, type ChatConfig, ChatElement, ChatError, type ChatInstance, type CompletePlanOptions, type ConcurrencyConfig, type ConcurrencyStrategy, ConsoleLogger, type CustomEmojiMap, DEFAULT_EMOJI_MAP, type DirectMessageHandler, Divider, DividerComponent, type Emoji, type EmojiFormats, type EmojiMapConfig, EmojiResolver, type EmojiValue, type EphemeralMessage, type FetchDirection, type FetchOptions, type FetchResult, Field, FieldComponent, Fields, FieldsComponent, type FileUpload, type FormatConverter, type FormattedContent, Image, ImageComponent, LinkButton, LinkButtonComponent, type LinkPreview, type ListThreadsOptions, type ListThreadsResult, type Lock, LockError, type LockScope, type LockScopeContext, type LogLevel, type Logger, type MarkdownConverter, type MarkdownTextChunk, type MemberJoinedChannelEvent, type MemberJoinedChannelHandler, type MentionHandler, type MessageDeletedEvent, type MessageDeletedHandler, Message, type MessageContext, type MessageData, type MessageHandler, MessageHistoryCache, type MessageHistoryConfig, type MessageMetadata, Modal, type ModalCloseEvent, type ModalCloseHandler, type ModalCloseResponse, ModalComponent, ModalElement, type ModalErrorsResponse, type ModalPushResponse, type ModalResponse, type ModalSubmitEvent, type ModalSubmitHandler, type ModalUpdateResponse, NotImplementedError, Plan, type PlanContent, type PlanModel, type PlanModelTask, type PlanTask, type PlanTaskStatus, type PlanUpdateChunk, type PostEphemeralOptions, type Postable, type PostableAst, type PostableCard, type PostableMarkdown, type PostableMessage, type PostableObject, type PostableObjectContext, type PostableRaw, type QueueEntry, RadioSelect, RadioSelectComponent, RateLimitError, type RawMessage, type ReactionEvent, type ReactionHandler, type ScheduledMessage, Section, SectionComponent, Select, SelectComponent, SelectOption, SelectOptionComponent, type SentMessage, type SerializedChannel, type SerializedMessage, type SerializedThread, type SlashCommandEvent, type SlashCommandHandler, type StartPlanOptions, type StateAdapter, type StreamChunk, type StreamEvent, type StreamOptions, StreamingMarkdownRenderer, type SubscribedMessageHandler, THREAD_STATE_TTL_MS, Table, type TaskUpdateChunk, TextComponent, TextInput, TextInputComponent, type Thread, ThreadImpl, type ThreadInfo, type ThreadSummary, type UpdateTaskInput, type WebhookOptions, type WellKnownEmoji, blockquote, cardChildToFallbackText, codeBlock, convertEmojiPlaceholders, createEmoji, defaultEmojiResolver, deriveChannelId, emoji, emphasis, fromFullStream, fromReactElement, fromReactModalElement, getEmoji, getNodeChildren, getNodeValue, inlineCode, isBlockquoteNode, isCardElement, isCodeNode, isDeleteNode, isEmphasisNode, isInlineCodeNode, isJSX, isLinkNode, isListItemNode, isListNode, isModalElement, isParagraphNode, isPostableObject, isStrongNode, isTableCellNode, isTableNode, isTableRowNode, isTextNode, link, markdownToPlainText, paragraph, parseMarkdown, reviver, root, strikethrough, stringifyMarkdown, strong, tableElementToAscii, tableToAscii, text, toAiMessages, toCardElement, toModalElement, toPlainText, walkAst };
+diff --git a/dist/index.js b/dist/index.js
+index b9a97ced2e0d3c0c38c03e97dbcf35391ee9fda4..ab1eb3c65984302d1f9b1009f90108f8b91247ed 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1916,6 +1916,7 @@ var Chat = class {
+   assistantContextChangedHandlers = [];
+   appHomeOpenedHandlers = [];
+   memberJoinedChannelHandlers = [];
++  messageDeletedHandlers = [];
+   /** Initialization state */
+   initPromise = null;
+   initialized = false;
+@@ -2240,6 +2241,10 @@ var Chat = class {
+     this.memberJoinedChannelHandlers.push(handler);
+     this.logger.debug("Registered member joined channel handler");
+   }
++  onMessageDeleted(handler) {
++    this.messageDeletedHandlers.push(handler);
++    this.logger.debug("Registered message deleted handler");
++  }
+   /**
+    * Get an adapter by name with type safety.
+    */
+@@ -2444,6 +2449,24 @@ var Chat = class {
+       options.waitUntil(task);
+     }
+   }
++  processMessageDeleted(event, options) {
++    const handlers = this.messageDeletedHandlers;
++    if (handlers.length === 0) return;
++    const task = (async () => {
++      for (const handler of handlers) {
++        await handler(event);
++      }
++    })().catch((err) => {
++      this.logger.error("Message deleted handler error", {
++        error: err,
++        channelId: event.channelId,
++        deletedTs: event.deletedTs
++      });
++    });
++    if (options?.waitUntil) {
++      options.waitUntil(task);
++    }
++  }
+   /**
+    * Handle a slash command event internally.
+    */

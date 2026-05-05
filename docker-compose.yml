@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  pookie:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      REDIS_URL: redis://redis:6379
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID:-replace-after-install}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET:-replace-after-install}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-replace-after-install}
+      SLACK_ENCRYPTION_KEY: ${SLACK_ENCRYPTION_KEY:?Generate one with `openssl rand -hex 32` and set SLACK_ENCRYPTION_KEY in your .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in your environment}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis-data:
