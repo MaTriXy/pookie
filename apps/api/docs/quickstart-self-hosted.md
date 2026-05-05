@@ -1,6 +1,6 @@
-# Quickstart — Self-hosted
+# Quickstart · Self-hosted
 
-Run Pookie on your own infra. Three paths below — pick one and follow it end to end. About fifteen minutes.
+Run Pookie on your own infra. Three paths below. Pick one and follow it end to end. About fifteen minutes.
 
 ## Before you start
 
@@ -8,7 +8,7 @@ You'll need:
 
 - A Slack workspace where you have permission to install apps.
 - An OpenAI API key (`OPENAI_API_KEY`). Get one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
-- A Redis instance — only if you're deploying outside Vercel/Railway/Docker (which bundle their own). [Upstash](https://upstash.com) free tier is fine; grab the `rediss://` TCP URL.
+- A Redis instance, only if you're deploying outside Vercel/Railway/Docker (which bundle their own). [Upstash](https://upstash.com) free tier is fine; grab the `rediss://` TCP URL.
 
 ## Deploy on Vercel
 
@@ -18,7 +18,7 @@ Open the [Vercel deploy link](https://vercel.com/new/clone?repository-url=https%
 
 ### 2. Fill in env vars
 
-The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. Vercel asks for the remaining env vars. Use placeholders for the three `SLACK_*` values — you'll replace them in step 5. Real values for the rest:
+The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. Vercel asks for the remaining env vars. Use placeholders for the three `SLACK_*` values. You'll replace them in step 5. Real values for the rest:
 
 ```
 SLACK_CLIENT_ID=placeholder
@@ -93,14 +93,14 @@ If Slack manifest creation fails on URL verification, **Deployment Protection** 
 At the deploy form:
 
 - Set `OPENAI_API_KEY` to your real value.
-- Leave the three `SLACK_*` placeholders alone — you'll replace them in step 5.
+- Leave the three `SLACK_*` placeholders alone. You'll replace them in step 5.
 - `REDIS_URL`, `BASE_URL`, and `IS_SELF_DEPLOYED` auto-wire from Railway's variable references and the Dockerfile.
 
 Click **Deploy** and wait for the build to finish.
 
 ### 3. Generate a public domain
 
-Railway doesn't expose your service publicly by default. In the Railway dashboard, click your Pookie service → **Settings** → scroll to **Networking** → click **Generate Domain**. Railway hands back a URL like `pookie-production-xxxx.up.railway.app`. That's your deploy URL — Slack needs it to reach Pookie.
+Railway doesn't expose your service publicly by default. In the Railway dashboard, click your Pookie service → **Settings** → scroll to **Networking** → click **Generate Domain**. Railway hands back a URL like `pookie-production-xxxx.up.railway.app`. That's your deploy URL. Slack needs it to reach Pookie.
 
 ### 4. Create your Slack app
 
@@ -165,7 +165,7 @@ Get a public HTTPS URL pointing at port `3000`. Pick one:
 
 - **VPS:** put a reverse proxy (Caddy/nginx/Traefik) in front, point a domain at it.
 - **Cloud Run / Fly:** the platform assigns a `*.run.app` / `*.fly.dev` URL.
-- **Local dev:** `ngrok http 3000` — copy the `https://*.ngrok-free.dev` URL.
+- **Local dev:** `ngrok http 3000`. Copy the `https://*.ngrok-free.dev` URL.
 
 Export it so the rest of the commands run as-is:
 
@@ -183,9 +183,9 @@ cp .env.example .env
 
 Edit `.env`:
 
-- `OPENAI_API_KEY` — your real OpenAI key
-- `BASE_URL` — paste the URL from step 1
-- Leave the three `SLACK_*` lines as `placeholder` — you'll replace them in step 5
+- `OPENAI_API_KEY`: your real OpenAI key
+- `BASE_URL`: paste the URL from step 1
+- Leave the three `SLACK_*` lines as `placeholder`. You'll replace them in step 5
 
 The Dockerfile sets `IS_SELF_DEPLOYED=true` automatically. The bundled `docker-compose.yml` provisions Redis on the side.
 
@@ -204,7 +204,7 @@ curl $BASE_URL/api/health
 
 ### 4. Create your Slack app
 
-Open `$BASE_URL/install` in a browser. You'll see a setup wizard. Click **"Create Slack App"** — it opens slack.com with a pre-filled manifest pointing at your `BASE_URL`. Sign in and click **Create** to spin up a new Slack app.
+Open `$BASE_URL/install` in a browser. You'll see a setup wizard. Click **"Create Slack App"**. It opens slack.com with a pre-filled manifest pointing at your `BASE_URL`. Sign in and click **Create** to spin up a new Slack app.
 
 > ⚠️ **Don't click any "Install to Workspace" button yet.** Pookie still has placeholder Slack creds, so the install would fail with `Invalid client_id`. Do steps 5–6 first.
 

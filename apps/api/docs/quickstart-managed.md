@@ -1,4 +1,4 @@
-# Quickstart — Managed
+# Quickstart · Managed
 
 The hosted version. About thirty seconds, no infra. Pookie runs on our servers; you install it to your Slack workspace via OAuth.
 
@@ -24,7 +24,7 @@ Pookie only sees channels it's invited to. In any channel you want it active in,
 
 Pookie posts a short hello on join. The first time you invite it to any channel, you'll get a longer help message walking through the basics.
 
-DMs work without the invite step — open a new direct message with `@pookie` from the sidebar and start chatting.
+DMs work without the invite step. Open a new direct message with `@pookie` from the sidebar and start chatting.
 
 ## 3. Run `/onboarding`
 
@@ -34,15 +34,15 @@ In Slack, run:
 /onboarding
 ```
 
-Pookie replies with an interactive card listing the most common MCP servers (Linear, GitHub, Sentry, PostHog, Vercel, Supabase, and more). Click the OAuth link next to any server to connect it. GitHub uses a personal access token instead — paste it inline.
+Pookie replies with an interactive card listing the most common MCP servers (Linear, GitHub, Sentry, PostHog, Vercel, Supabase, and more). Click the OAuth link next to any server to connect it. GitHub uses a personal access token instead, paste it inline.
 
 ### Permission scopes
 
 When you connect an MCP server, you choose who can use it:
 
-- **Personal** (default) — only you. Your tokens, your data. Use this for personal accounts like your own Linear.
-- **`--channel`** — anyone in the current channel. Use for shared accounts: a team Sentry, a project's GitHub org.
-- **`--global`** — anyone in the workspace. Admins only.
+- **Personal** (default): only you. Your tokens, your data. Use this for personal accounts like your own Linear.
+- **`--channel`**: anyone in the current channel. Use for shared accounts: a team Sentry, a project's GitHub org.
+- **`--global`**: anyone in the workspace. Admins only.
 
 The same flags work directly with `/mcp-add`:
 
@@ -79,10 +79,10 @@ Pookie replies inline and cites the messages it read.
 
 ## Slash commands
 
-- `/help` — overview of what Pookie does
-- `/onboarding` — connect MCP tools
-- `/mcp-add`, `/mcp-list`, `/mcp-status`, `/mcp-remove`, `/mcp-presets` — manage MCP servers
-- `/pookie-config` — set personality (`cute` / `balanced` / `professional`) and other behavior
+- `/help`: overview of what Pookie does
+- `/onboarding`: connect MCP tools
+- `/mcp-add`, `/mcp-list`, `/mcp-status`, `/mcp-remove`, `/mcp-presets`: manage MCP servers
+- `/pookie-config`: set personality (`cute` / `balanced` / `professional`) and other behavior
 
 ## Stuck?
 

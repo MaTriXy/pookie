@@ -1,16 +1,19 @@
 export interface DocEntry {
   title: string;
+  sidebarLabel: string;
   description: string;
 }
 
 export const DOCS = {
   "quickstart-managed": {
-    title: "Quickstart — Managed",
+    title: "Quickstart · Managed",
+    sidebarLabel: "managed",
     description:
       "Install Pookie to your Slack workspace via OAuth in about thirty seconds.",
   },
   "quickstart-self-hosted": {
-    title: "Quickstart — Self-hosted",
+    title: "Quickstart · Self-hosted",
+    sidebarLabel: "self-hosted",
     description:
       "Run Pookie on your own infra. Vercel, Railway, or Docker. About fifteen minutes.",
   },

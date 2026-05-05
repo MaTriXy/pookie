@@ -11,12 +11,12 @@ export const GET = (request: Request) => {
 ## Install
 
 - [Install guide](${origin}/install): Agent skill that walks the install end to end. Branches into managed (one-click OAuth) or self-host (~15 minutes on your own infra). The self-host branch (Path B) covers Slack app creation via the manifest URL.
-- [Self-hosting guide](${origin}/self-hosting): Host setup walkthrough — Vercel / Railway / Fly / Render / DigitalOcean / Cloud Run / AWS / Docker on a VPS.
+- [Self-hosting guide](${origin}/self-hosting): Host setup walkthrough across Vercel / Railway / Fly / Render / DigitalOcean / Cloud Run / AWS / Docker on a VPS.
 
 ## Docs
 
-- [Quickstart — Managed](${origin}/docs/quickstart-managed): Human-facing quickstart for the hosted version. OAuth install, /invite, /onboarding with MCP scope explanation, first query.
-- [Quickstart — Self-hosted](${origin}/docs/quickstart-self-hosted): Human-facing quickstart for self-hosting. Railway / Vercel / Docker deploy options, Slack app creation, env vars, OAuth install, troubleshooting.
+- [Quickstart · Managed](${origin}/docs/quickstart-managed): Human-facing quickstart for the hosted version. OAuth install, /invite, /onboarding with MCP scope explanation, first query.
+- [Quickstart · Self-hosted](${origin}/docs/quickstart-self-hosted): Human-facing quickstart for self-hosting. Railway / Vercel / Docker deploy options, Slack app creation, env vars, OAuth install, troubleshooting.
 
 ## Endpoints
 

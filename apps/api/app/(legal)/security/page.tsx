@@ -137,7 +137,7 @@ const SecurityPage = () => (
       <li>
         <strong>Provider data handling:</strong> OpenAI acts as a subprocessor
         and is bound by its own DPA and data-usage policies. Inference requests
-        carry only the data needed to answer the current turn — Pookie does not
+        carry only the data needed to answer the current turn. Pookie does not
         bundle unrelated workspace history into the prompt.
       </li>
       <li>
@@ -209,9 +209,9 @@ const SecurityPage = () => (
 
     <h2>7. MCP and connected services</h2>
     <p>
-      Pookie can connect to Model Context Protocol (MCP) servers — for example,
-      GitHub, Linear, PostHog, or any custom MCP — to read and write data on
-      your behalf. These connections are opt-in and customer-driven.
+      Pookie can connect to Model Context Protocol (MCP) servers (for example,
+      GitHub, Linear, PostHog, or any custom MCP) to read and write data on your
+      behalf. These connections are opt-in and customer-driven.
     </p>
     <ul>
       <li>
@@ -225,9 +225,9 @@ const SecurityPage = () => (
         connection (<code>/mcp-remove</code>) deletes the stored credential.
       </li>
       <li>
-        <strong>Action transparency:</strong> Tool calls — including MCP tool
-        invocations — are surfaced inline in Pookie&apos;s replies so you can
-        see what was read or written and where.
+        <strong>Action transparency:</strong> Tool calls, including MCP tool
+        invocations, are surfaced inline in Pookie&apos;s replies so you can see
+        what was read or written and where.
       </li>
     </ul>
 
@@ -245,7 +245,7 @@ const SecurityPage = () => (
       prompt, and every tool definition before you install it. Workspaces that
       need full data residency or air-gapped operation can self-host on their
       own infrastructure (Vercel, Railway, Fly, Cloud Run, AWS, or Docker on any
-      VPS) — see the self-hosting guide for details.
+      VPS). See the self-hosting guide for details.
     </p>
 
     <h2>9. Vulnerability disclosure</h2>
@@ -278,7 +278,7 @@ const SecurityPage = () => (
     <ul>
       <li>
         Findings against third-party services (Slack, Vercel, Upstash, model
-        providers, customer-connected MCP servers) — please report those to the
+        providers, customer-connected MCP servers). Please report those to the
         respective vendor
       </li>
       <li>
@@ -286,7 +286,7 @@ const SecurityPage = () => (
         Software employees, and physical attacks
       </li>
       <li>
-        Self-hosted deployments operated by third parties — please report to the
+        Self-hosted deployments operated by third parties. Please report to the
         operator of that deployment
       </li>
     </ul>

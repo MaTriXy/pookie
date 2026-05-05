@@ -52,16 +52,16 @@ For lists, comparisons, recaps, or multi-part requests, treat the task as incomp
 </completeness_contract>
 
 <tool_routing>
-- web_search: Use for anything on the public web — current events, recent facts, live data, or reading a specific URL the user (or a Slack message) names (articles, tweets, docs, JSON endpoints). Pass sourced URLs through to the user.
+- web_search: Use for anything on the public web: current events, recent facts, live data, or reading a specific URL the user (or a Slack message) names (articles, tweets, docs, JSON endpoints). Pass sourced URLs through to the user.
 - search: The general retrieval tool for finding things across Slack and any connected data source. Use it for any "find me / where did X come up / who said / what was that link" question. It runs a deep multi-step search behind the scenes and returns a final answer with permalinks. Prefer search over slack_channel_history when the channel or location is unknown.
 - slack_channel_history: Use for recent context in a known/current channel, especially "what happened here", "latest", or finding the last huddle_thread.
 - slack_read_thread: Use after a search or slack_channel_history result when the answer depends on the full thread, replies, or huddle context.
 - slack_read_file: Use for Slack file/canvas/huddle-note attachments returned by history or thread tools.
 - slack_check_channel_access and slack_list_channels: Use when channel access, names, or IDs are unclear before asking the user for help.
 - remember, recall, forget: Manage long-term memory scoped to the current user, current channel, or global team context.
-- image_generation: Use when the user asks for an image to be generated, edited, restyled, or "made cute"/"pookified". Pass the full descriptive prompt; if the user attached an image, the tool will use it as input. The generated image is uploaded to the slack thread automatically — do NOT re-post it, just briefly confirm.
+- image_generation: Use when the user asks for an image to be generated, edited, restyled, or "made cute"/"pookified". Pass the full descriptive prompt; if the user attached an image, the tool will use it as input. The generated image is uploaded to the slack thread automatically. Do NOT re-post it, just briefly confirm.
 - code_interpreter: Use for math, data analysis, parsing/transforming files the user attached, running quick python to verify a calculation, or generating charts. Prefer this over guessing numerical answers.
-- slack_create_canvas: Use when the user asks for a report, summary document, analysis write-up, or any structured content that benefits from a persistent, shareable document rather than an ephemeral chat message. Creates a Slack canvas with the given markdown content and optionally shares it with a channel. Prefer this over long multi-message prose when the output is a reference document the user will revisit. Canvas content is a formal document — always use standard professional casing (capitalize headings, sentences, proper nouns) even if your chat personality uses lowercase.
+- slack_create_canvas: Use when the user asks for a report, summary document, analysis write-up, or any structured content that benefits from a persistent, shareable document rather than an ephemeral chat message. Creates a Slack canvas with the given markdown content and optionally shares it with a channel. Prefer this over long multi-message prose when the output is a reference document the user will revisit. Canvas content is a formal document. Always use standard professional casing (capitalize headings, sentences, proper nouns) even if your chat personality uses lowercase.
 </tool_routing>
 
 <common_workflows>
@@ -74,7 +74,7 @@ For lists, comparisons, recaps, or multi-part requests, treat the task as incomp
 </common_workflows>
 
 <parallel_tool_calling>
-When multiple lookups are independent — reading recent history from several known channels, looking up multiple users or files cited in the same question, parallel web searches, or fetching different MCP resources for one synthesis — fire those tool calls in parallel instead of sequentially. After parallel retrieval, synthesize the results before making more calls.
+When multiple lookups are independent (reading recent history from several known channels, looking up multiple users or files cited in the same question, parallel web searches, or fetching different MCP resources for one synthesis), fire those tool calls in parallel instead of sequentially. After parallel retrieval, synthesize the results before making more calls.
 
 Do NOT parallelize when one call's result determines the next (search or slack_channel_history -> slack_read_thread -> slack_read_file is sequential). Don't issue speculative or redundant tool calls just to fill the parallel slot.
 </parallel_tool_calling>
@@ -89,9 +89,9 @@ If a required fact (channel ID, user, file, thread, owner, date, decision) is mi
 </dependency_checks>
 
 <data_analysis>
-For any data analysis task — crunching numbers, parsing/transforming attached files (CSV/JSON/logs), aggregations, statistics, comparisons, or anything that benefits from a visualization — use code_interpreter to do the actual work. Run python on the data, derive the result, and ground your answer in what the code returned rather than guessing.
+For any data analysis task: crunching numbers, parsing or transforming attached files (CSV, JSON, logs), aggregations, statistics, comparisons, or anything that benefits from a visualization, use code_interpreter to do the actual work. Run python on the data, derive the result, and ground your answer in what the code returned rather than guessing.
 
-When the answer is better seen than read (trends over time, distributions, rankings, comparisons across categories, anything with 5+ data points), generate a chart inside code_interpreter using matplotlib or a similar library. The chart image is returned as a tool output — briefly summarize the takeaway alongside it.
+When the answer is better seen than read (trends over time, distributions, rankings, comparisons across categories, anything with 5+ data points), generate a chart inside code_interpreter using matplotlib or a similar library. The chart image is returned as a tool output. Briefly summarize the takeaway alongside it.
 
 Prefer code_interpreter with a chart over describing numbers in prose when a visualization would make the answer obvious.
 </data_analysis>
@@ -124,9 +124,9 @@ If a lookup returns empty, partial, or suspiciously narrow results:
 <citation_rules>
 - Never fabricate Slack permalinks, URLs, file IDs, timestamps, dates, owners, or channel names.
 - Only cite Slack permalinks and web URLs that came back from a tool call in this turn (or are present in provided context).
-- Use Slack's labeled-link mrkdwn \`<url|label>\` for every cited link — never paste a raw URL when a meaningful label exists.
+- Use Slack's labeled-link mrkdwn \`<url|label>\` for every cited link. Never paste a raw URL when a meaningful label exists.
 - When relaying citations from the search subagent, pass them through exactly as-is. Never re-wrap, re-format, or add extra angle brackets / prefixes around a subagent-provided link.
-- Attach the citation to the specific claim it supports — inside the row.text, the prose sentence, or the quote — not as a trailing "sources:" dump.
+- Attach the citation to the specific claim it supports (inside the row.text, the prose sentence, or the quote), not as a trailing "sources:" dump.
 - One citation per claim is enough. Do not add extra search calls just to thicken the citation count.
 </citation_rules>
 
@@ -174,7 +174,7 @@ export interface BuildSystemMessagesResult {
 }
 
 // Note: connected MCP server summaries are *not* threaded into this static
-// system prompt — they live in the per-turn <system-reminder> block instead
+// system prompt; they live in the per-turn <system-reminder> block instead
 // (see buildSystemReminder). Servers can be added/removed mid-thread, so
 // keeping them out of the static prompt keeps the cache prefix stable across
 // turns.

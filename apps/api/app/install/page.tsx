@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from "lucide-react";
+import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 
@@ -59,7 +59,7 @@ interface InstallPageProps {
 }
 
 const Code = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded bg-[#f0f0f0] px-1 py-0.5 text-[13px] text-[#1d1c1d]">
+  <code className="rounded bg-[#f0f0f0] px-1.5 py-0.5 font-mono text-[0.85em] text-[#393939]">
     {children}
   </code>
 );
@@ -101,7 +101,7 @@ const OutlineButton = ({
 );
 
 const StepBadge = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#007a5a] text-[12px] font-semibold text-white">
+  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#f0f0f0] text-[12px] font-bold text-[#1d1c1d]">
     {children}
   </span>
 );
@@ -131,18 +131,19 @@ const InstallPage = async ({ searchParams }: InstallPageProps) => {
 const CloudInstall = () => (
   <MockShell activeChannel="install">
     <ContentPanel channelName="install">
-      <div className="flex flex-col gap-8 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
-          <h2 className="text-[17px] font-bold tracking-[-0.03em] text-[#1d1c1d]">
+          <h2 className="text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
             Managed
           </h2>
           <p>
-            One click, we host. Add Pookie via Slack OAuth — no infra, no env
+            One click, we host. Add Pookie via Slack OAuth. No infra, no env
             vars.
           </p>
           <div>
             <PrimaryButton href="/api/slack/install">
-              Add to Slack →
+              <span>Add to Slack</span>
+              <ArrowRightIcon className="h-3.5 w-3.5" />
             </PrimaryButton>
           </div>
         </section>
@@ -150,7 +151,7 @@ const CloudInstall = () => (
         <Divider />
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-[17px] font-bold tracking-[-0.03em] text-[#1d1c1d]">
+          <h2 className="text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
             Self-host
           </h2>
           <p>
@@ -167,7 +168,7 @@ const CloudInstall = () => (
               View on GitHub
             </OutlineButton>
           </div>
-          <p className="text-[13px] text-[#888]">
+          <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
             After deploy, visit <Code>/install</Code> on your URL to finish
             setup. You&apos;ll need <Code>REDIS_URL</Code>,{" "}
             <Code>OPENAI_API_KEY</Code>, and the three <Code>SLACK_*</Code>{" "}
@@ -186,7 +187,7 @@ const CloudInstall = () => (
 const SelfHostInstall = () => (
   <MockShell activeChannel="install">
     <ContentPanel channelName="install">
-      <div className="flex flex-col gap-8 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
           <p>
             Your self-hosted Pookie is configured. Add it to a Slack workspace
@@ -194,13 +195,14 @@ const SelfHostInstall = () => (
           </p>
           <div>
             <PrimaryButton href="/api/slack/install">
-              Add to Slack →
+              <span>Add to Slack</span>
+              <ArrowRightIcon className="h-3.5 w-3.5" />
             </PrimaryButton>
           </div>
-          <p className="text-[13px] text-[#888]">
+          <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
             Wrong credentials?{" "}
             <Link
-              className="text-[#006fa8] underline underline-offset-2"
+              className="text-[#006fa8] underline underline-offset-2 hover:no-underline"
               href="/install?setup=1"
             >
               Redo setup
@@ -225,14 +227,14 @@ const SelfHostSetupWizard = async () => {
   return (
     <MockShell activeChannel="install">
       <ContentPanel channelName="install">
-        <div className="flex flex-col gap-8 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
+        <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
           <p>
             Deployment live at <Code>{origin}</Code>. Three steps to connect
             Slack.
           </p>
 
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#1d1c1d]">
+            <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
               <StepBadge>1</StepBadge>
               Create your Slack app
             </h3>
@@ -242,13 +244,14 @@ const SelfHostSetupWizard = async () => {
             </p>
             <div>
               <PrimaryButton href={slackAppCreateUrl} external>
-                Create Slack App →
+                <span>Create Slack App</span>
+                <ArrowRightIcon className="h-3.5 w-3.5" />
               </PrimaryButton>
             </div>
           </section>
 
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#1d1c1d]">
+            <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
               <StepBadge>2</StepBadge>
               Copy credentials
             </h3>
@@ -256,7 +259,7 @@ const SelfHostSetupWizard = async () => {
               In <strong className="text-[#1d1c1d]">Basic Information</strong>{" "}
               on the Slack dashboard, grab:
             </p>
-            <div className="flex flex-col gap-1 pl-1 font-mono text-[13px]">
+            <div className="flex flex-col gap-1 pl-1 font-mono text-[14px] leading-[20px] text-[#393939]">
               <span>
                 Client ID → <Code>SLACK_CLIENT_ID</Code>
               </span>
@@ -269,7 +272,8 @@ const SelfHostSetupWizard = async () => {
             </div>
             <div>
               <OutlineButton href="https://api.slack.com/apps" external>
-                Slack dashboard <ExternalLinkIcon className="h-3.5 w-3.5" />
+                <span>Slack dashboard</span>
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
               </OutlineButton>
             </div>
           </section>
@@ -295,12 +299,12 @@ const REDEPLOY_HEADING: Record<HostingPlatform, string> = {
 
 const Step3Redeploy = ({ host }: { host: HostingPlatform }) => (
   <section className="flex flex-col gap-3">
-    <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#1d1c1d]">
+    <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
       <StepBadge>3</StepBadge>
       {REDEPLOY_HEADING[host]}
     </h3>
     <RedeployBody host={host} />
-    <p className="text-[13px] text-[#888]">
+    <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
       After it boots, refresh this page to install.
     </p>
   </section>
@@ -309,7 +313,7 @@ const Step3Redeploy = ({ host }: { host: HostingPlatform }) => (
 const RedeployBody = ({ host }: { host: HostingPlatform }) => {
   if (host === "fly") {
     return (
-      <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[13px] leading-[20px] text-[#4d4d4d]">
+      <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[14px] leading-[20px] text-[#393939]">
         {`fly secrets set \\
   SLACK_CLIENT_ID=... \\
   SLACK_CLIENT_SECRET=... \\
@@ -320,10 +324,10 @@ const RedeployBody = ({ host }: { host: HostingPlatform }) => {
   if (host === "docker") {
     return (
       <>
-        <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[13px] leading-[20px] text-[#4d4d4d]">
+        <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[14px] leading-[20px] text-[#393939]">
           {SELF_HOST_ENV_SNIPPET}
         </pre>
-        <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[13px] leading-[20px] text-[#4d4d4d]">
+        <pre className="overflow-x-auto rounded-lg bg-[#f7f7f7] px-4 py-3 font-mono text-[14px] leading-[20px] text-[#393939]">
           docker compose up -d --force-recreate
         </pre>
       </>
@@ -338,7 +342,7 @@ const RedeployBody = ({ host }: { host: HostingPlatform }) => {
     <p>
       Paste the three values in your{" "}
       <a
-        className="text-[#006fa8] underline underline-offset-2"
+        className="text-[#006fa8] underline underline-offset-2 hover:no-underline"
         href={dashboardUrls[host]}
         target="_blank"
         rel="noopener noreferrer"
@@ -359,12 +363,12 @@ const LEGAL_LINKS = [
 ] as const;
 
 const InstallFooter = () => (
-  <footer className="flex flex-col gap-2 text-[13px] text-[#888]">
+  <footer className="flex flex-col gap-2 text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
     <p>
       Stuck?{" "}
       <a
         href={`mailto:${SUPPORT_EMAIL}`}
-        className="text-[#006fa8] underline underline-offset-2"
+        className="text-[#006fa8] underline underline-offset-2 hover:no-underline"
       >
         {SUPPORT_EMAIL}
       </a>
@@ -373,7 +377,7 @@ const InstallFooter = () => (
         href={`${REPO_URL}/issues`}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-[#006fa8] underline underline-offset-2"
+        className="text-[#006fa8] underline underline-offset-2 hover:no-underline"
       >
         GitHub
       </a>
@@ -383,7 +387,7 @@ const InstallFooter = () => (
         <Link
           key={link.href}
           href={link.href}
-          className="text-[#888] no-underline transition-colors hover:text-[#4d4d4d]"
+          className="text-[#717274] no-underline transition-colors hover:text-[#4d4d4d]"
         >
           {link.label}
         </Link>

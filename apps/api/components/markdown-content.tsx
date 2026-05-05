@@ -21,7 +21,7 @@ const extractText = (node: ReactNode): string => {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="mt-2 mb-6 text-[20px] leading-[26px] font-bold tracking-[-0.03em] text-[#1d1c1d] first:mt-0">
+    <h1 className="mt-2 mb-3 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d] first:mt-0">
       {children}
     </h1>
   ),
@@ -30,7 +30,7 @@ const components: Components = {
     return (
       <h2
         id={id}
-        className="mt-10 mb-4 scroll-mt-12 border-b border-[#f0f0f0] pb-2 text-[17px] font-bold tracking-[-0.03em] text-[#1d1c1d]"
+        className="mt-6 mb-2 scroll-mt-12 border-b border-[#f0f0f0] pb-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]"
       >
         {children}
       </h2>
@@ -41,14 +41,14 @@ const components: Components = {
     return (
       <h3
         id={id}
-        className="mt-7 mb-3 scroll-mt-12 text-[15px] font-bold tracking-[-0.02em] text-[#1d1c1d]"
+        className="mt-4 mb-2 scroll-mt-12 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]"
       >
         {children}
       </h3>
     );
   },
   p: ({ children }) => (
-    <p className="mb-4 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
+    <p className="mb-3 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
       {children}
     </p>
   ),
@@ -66,38 +66,38 @@ const components: Components = {
     );
   },
   code: ({ children }) => (
-    <code className="rounded bg-[#f0f0f0] px-1.5 py-0.5 font-mono text-[0.875em] text-[#393939]">
+    <code className="rounded bg-[#f0f0f0] px-1.5 py-0.5 font-mono text-[0.85em] text-[#393939]">
       {children}
     </code>
   ),
   pre: ({ children }) => (
-    <pre className="my-4 overflow-x-auto rounded-lg bg-[#f7f7f7] p-4 font-mono text-[13px] leading-[20px] text-[#4d4d4d] [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[13px]">
+    <pre className="my-3 overflow-x-auto rounded-lg bg-[#f7f7f7] p-4 font-mono text-[14px] leading-[20px] text-[#393939] [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[14px]">
       {children}
     </pre>
   ),
   ul: ({ children }) => (
-    <ul className="my-4 ml-5 flex list-disc flex-col gap-1.5">{children}</ul>
+    <ul className="my-3 ml-5 flex list-disc flex-col gap-1.5">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="my-4 ml-5 flex list-decimal flex-col gap-1.5">{children}</ol>
+    <ol className="my-3 ml-5 flex list-decimal flex-col gap-1.5">{children}</ol>
   ),
   li: ({ children }) => (
-    <li className="text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d] [&>p]:mb-0">
+    <li className="text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d] [&>p]:mb-0">
       {children}
     </li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="my-4 border-l-2 border-[#e0e0e0] pl-4 text-[#888] italic">
+    <blockquote className="my-3 border-l-[3px] border-[#dddddd] pl-4 text-base leading-6 font-medium tracking-[-0.02em] text-[#717274]">
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-8 border-[#f0f0f0]" />,
+  hr: () => <hr className="my-6 border-[#f0f0f0]" />,
   strong: ({ children }) => (
     <strong className="font-bold text-[#1d1c1d]">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   table: ({ children }) => (
-    <div className="my-6 overflow-x-auto rounded-lg border border-[#e8e8e8]">
+    <div className="my-5 overflow-x-auto rounded-lg border border-[#e8e8e8]">
       <table className="w-full border-collapse text-[14px]">{children}</table>
     </div>
   ),
@@ -105,7 +105,7 @@ const components: Components = {
     <thead className="border-b border-[#e8e8e8] bg-[#fafafa]">{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="px-3 py-2 text-left text-[13px] font-bold text-[#1d1c1d]">
+    <th className="px-3 py-2 text-left text-[13px] font-bold tracking-[-0.02em] text-[#1d1c1d]">
       {children}
     </th>
   ),
@@ -113,7 +113,7 @@ const components: Components = {
     <tr className="border-b border-[#f0f0f0] last:border-0">{children}</tr>
   ),
   td: ({ children }) => (
-    <td className="px-3 py-2 align-top text-[14px] text-[#4d4d4d]">
+    <td className="px-3 py-2 align-top text-[14px] leading-[20px] tracking-[-0.01em] text-[#4d4d4d]">
       {children}
     </td>
   ),

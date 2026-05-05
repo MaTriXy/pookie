@@ -28,12 +28,9 @@ const DocSlugLayout = async ({ children, params }: DocSlugLayoutProps) => {
   const subItems: SidebarSubItem[] = (
     Object.entries(DOCS) as [DocSlug, (typeof DOCS)[DocSlug]][]
   ).map(([docSlug, entry]) => {
-    const label = entry.title
-      .replace(/^Quickstart\s*[—-]\s*/, "")
-      .toLowerCase();
     const isActive = docSlug === slug;
     return {
-      label,
+      label: entry.sidebarLabel,
       href: `/docs/${docSlug}`,
       active: isActive,
       children: isActive

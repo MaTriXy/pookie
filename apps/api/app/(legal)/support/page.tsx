@@ -39,7 +39,7 @@ const SupportPage = () => (
         <strong>Approximate time</strong> the issue happened, with timezone
       </li>
       <li>
-        <strong>Pookie&apos;s reply, if any</strong> — a screenshot or copy of
+        <strong>Pookie&apos;s reply, if any</strong>: a screenshot or copy of
         the message helps us trace the request in our logs
       </li>
     </ul>

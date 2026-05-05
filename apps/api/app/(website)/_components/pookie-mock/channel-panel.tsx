@@ -16,6 +16,7 @@ import animations from "./animations.module.css";
 import { AudioIconButton } from "./audio-icon-button";
 import { BorderedIconButton } from "./bordered-icon-button";
 import { BellIcon, PeopleIcon, SmilePlusIcon } from "./icons";
+import { Mention } from "./mention";
 import { ReactionCountButton } from "./reaction-count-button";
 import { cx, panelShadow } from "./styles";
 
@@ -77,12 +78,6 @@ const ChannelHeader = () => (
     </div>
     <HeaderActions />
   </header>
-);
-
-const Mention = ({ name }: { name: string }) => (
-  <span className="relative inline-flex h-[1.25em] shrink-0 items-center px-[0.2em] text-[#006fa8] before:absolute before:top-[0.13em] before:right-[-0.17em] before:bottom-[0.09em] before:left-[-0.04em] before:[transform:rotate(-0.8deg)_skewX(-3deg)] before:[border-radius:8px_5px_7px_4px/5px_8px_4px_7px] before:bg-[linear-gradient(96deg,rgb(143_218_255_/_0.42)_0%,rgb(126_209_255_/_0.56)_48%,rgb(159_226_255_/_0.42)_100%)] before:content-[''] after:absolute after:top-[0.35em] after:right-[-0.09em] after:left-[0.09em] after:h-[0.52em] after:[transform:rotate(1deg)] after:rounded-full after:bg-[rgb(87_190_255_/_0.1)] after:content-['']">
-    <span className="relative z-[1]">@{name}</span>
-  </span>
 );
 
 const IntroMessage = ({
@@ -193,7 +188,7 @@ const ReactionPills = () => {
   return (
     <div
       suppressHydrationWarning
-      className="relative mt-0 mb-0 flex min-h-[33px] shrink-0 flex-wrap items-center gap-[9px]"
+      className="relative mt-2 mb-0 flex min-h-[33px] shrink-0 flex-wrap items-center gap-[9px]"
       style={messageBodyIndentStyle}
     >
       {reactions?.map((emoji) => (
@@ -385,8 +380,8 @@ export const ChannelPanel = () => {
             sender="pookie"
             body={
               <>
-                looks like <Mention name="sam" /> shipped the dashboard refresh
-                on Tuesday:
+                looks like <Mention name="nisarg" /> shipped the dashboard
+                refresh on Tuesday:
               </>
             }
             avatar="pookie"
@@ -397,7 +392,7 @@ export const ChannelPanel = () => {
           >
             <QuotedSearchResult
               quote="dashboard v2 just shipped 🚢 huge thanks to everyone who reviewed"
-              source="@sam in #ship-it · 2 days ago"
+              source="@nisarg in #ship-it · 2 days ago"
             />
           </MessageBlock>
           <MessageBlock

@@ -20,7 +20,7 @@ const CONTENT = readFileSync(
 export const metadata: Metadata = {
   title: "Self-host Pookie",
   description:
-    "Run Pookie on your own infra. Vercel, Railway, Render, Fly, DigitalOcean, Cloud Run, AWS, or Docker on any VPS — about 15 minutes start to finish.",
+    "Run Pookie on your own infra. Vercel, Railway, Render, Fly, DigitalOcean, Cloud Run, AWS, or Docker on any VPS. About 15 minutes start to finish.",
 };
 
 const SelfHostingPage = () => (
