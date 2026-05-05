@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const PROSE_CLASS = [
   "flex flex-col gap-4 text-[14px] leading-[21px] text-[#555]",
-  "[&_h1]:text-[26px] [&_h1]:font-semibold [&_h1]:leading-[32px] [&_h1]:tracking-[-0.03em] [&_h1]:text-[#393939]",
-  "[&_h2]:mt-8 [&_h2]:mb-1 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h2]:tracking-[-0.02em] [&_h2]:text-[#393939]",
+  "[&_h1]:text-[26px] [&_h1]:font-semibold [&_h1]:leading-[32px] [&_h1]:text-[#393939]",
+  "[&_h2]:mt-8 [&_h2]:mb-1 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h2]:text-[#393939]",
   "[&_h3]:mt-4 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-[#393939]",
   "[&_p]:text-[#666]",
   "[&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-5 [&_ul]:text-[#666]",

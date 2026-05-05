@@ -15,19 +15,19 @@ export const PageShell = ({
 );
 
 export const PageHeading = ({ children }: { children: ReactNode }) => (
-  <h1 className="text-[26px] leading-[32px] font-semibold tracking-[-0.03em] text-[#393939]">
+  <h1 className="text-[26px] leading-[32px] font-semibold text-[#393939]">
     {children}
   </h1>
 );
 
 export const PageSubheading = ({ children }: { children: ReactNode }) => (
-  <h2 className="text-[19px] leading-[25px] font-semibold tracking-[-0.03em] text-[#393939]">
+  <h2 className="text-[19px] leading-[25px] font-semibold text-[#393939]">
     {children}
   </h2>
 );
 
 export const PageText = ({ children }: { children: ReactNode }) => (
-  <p className="text-[14px] leading-[21px] tracking-[-0.01em] text-[#666]">
+  <p className="text-[14px] leading-[21px] text-[#666]">
     {children}
   </p>
 );

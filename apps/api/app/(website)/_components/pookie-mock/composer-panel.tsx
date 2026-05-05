@@ -460,9 +460,9 @@ const ComposerInner = () => {
               aria-placeholder={
                 didJustSend ? "Message sent" : "Message #pookie"
               }
-              className="w-full border-0 bg-transparent p-0 text-[17px] leading-[22px] font-medium tracking-[-0.01em] text-[#1d1c1d] outline-none [&_*]:outline-none"
+              className="w-full border-0 bg-transparent p-0 text-[17px] leading-[22px] font-medium text-[#1d1c1d] outline-none [&_*]:outline-none"
               placeholder={
-                <div className="pointer-events-none absolute top-[18px] left-[11px] text-[17px] leading-[22px] font-medium tracking-[-0.01em] text-[#4d4d4d] select-none">
+                <div className="pointer-events-none absolute top-[18px] left-[11px] text-[17px] leading-[22px] font-medium text-[#4d4d4d] select-none">
                   {didJustSend ? "Message sent" : "Message #pookie"}
                 </div>
               }

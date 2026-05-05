@@ -45,7 +45,7 @@ const SCROLL_EDGE_EPSILON_PX = 1;
 const HeaderActions = () => (
   <div className="relative mr-3 flex h-[41px] shrink-0 items-center gap-2 max-[520px]:mr-0 max-[520px]:gap-1.5">
     <BorderedIconButton label="View 7 members" variant="members">
-      <span className="col-start-1 row-start-1 ml-[34px] h-6 self-center justify-self-start text-[17px] leading-6 font-medium tracking-[-0.03em] text-[#495058]">
+      <span className="col-start-1 row-start-1 ml-[34px] h-6 self-center justify-self-start text-[17px] leading-6 font-medium text-[#495058]">
         7
       </span>
       <PeopleIcon />
@@ -73,7 +73,7 @@ const HeaderActions = () => (
 
 const ChannelHeader = () => (
   <header className="mb-5 flex h-[41px] w-full shrink-0 items-center justify-between gap-3">
-    <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold tracking-[-0.03em] text-[#393939]">
+    <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
       <span>#</span>
       <span>pookie</span>
     </div>
@@ -103,10 +103,10 @@ const IntroMessage = ({
       )}
     />
     <div className="flex min-w-0 flex-col gap-0.5 text-xl leading-[25px] max-[520px]:text-[19px] max-[520px]:leading-6">
-      <div className="leading-[inherit] font-bold tracking-[-0.03em] text-[#1d1c1d]">
+      <div className="leading-[inherit] font-bold text-[#1d1c1d]">
         {sender}
       </div>
-      <div className="flex flex-wrap items-center gap-[7px] leading-[inherit] font-medium tracking-[-0.03em] text-[#4d4d4d]">
+      <div className="flex flex-wrap items-center gap-[7px] leading-[inherit] font-medium text-[#4d4d4d]">
         {showMention && <Mention name="pookie" />}
         <span>{body}</span>
       </div>
@@ -122,9 +122,9 @@ const QuotedSearchResult = ({
   source: string;
 }) => (
   <div className="mt-1.5" style={messageBodyIndentStyle}>
-    <blockquote className="border-l-[3px] border-[#dddddd] py-0.5 pl-3 text-xl leading-[25px] font-medium tracking-[-0.03em] text-[#4d4d4d] max-[520px]:text-[19px] max-[520px]:leading-6">
+    <blockquote className="border-l-[3px] border-[#dddddd] py-0.5 pl-3 text-xl leading-[25px] font-medium text-[#4d4d4d] max-[520px]:text-[19px] max-[520px]:leading-6">
       <span className="block">{quote}</span>
-      <span className="mt-0.5 block text-base font-medium text-[#717274] max-[520px]:text-[15px]">
+      <span className="mt-0.5 block text-base font-semibold text-[#717274] max-[520px]:text-[15px]">
         {source}
       </span>
     </blockquote>
@@ -268,7 +268,7 @@ const MessageBlock = ({
   >
     {groupedWithPrevious ? (
       <div
-        className="flex flex-wrap items-center gap-[7px] text-xl leading-[25px] font-medium tracking-[-0.03em] text-[#4d4d4d] max-[520px]:text-[19px] max-[520px]:leading-6"
+        className="flex flex-wrap items-center gap-[7px] text-xl leading-[25px] font-medium text-[#4d4d4d] max-[520px]:text-[19px] max-[520px]:leading-6"
         style={messageBodyIndentStyle}
       >
         <span>{body}</span>
@@ -545,7 +545,7 @@ export const ChannelPanel = () => {
           <button
             className={cx(
               animations.messageReveal,
-              "cursor-pointer rounded-full border-0 bg-white/90 px-3 py-1.5 text-[13px] font-medium tracking-[-0.01em] text-[#8d8d8d] shadow-sm backdrop-blur-sm transition-colors font-[inherit] hover:bg-white hover:text-[#696969]",
+              "cursor-pointer rounded-full border-0 bg-white/90 px-3 py-1.5 text-[13px] font-medium text-[#8d8d8d] shadow-sm backdrop-blur-sm transition-colors font-[inherit] hover:bg-white hover:text-[#696969]",
             )}
             onClick={skipIntro}
             style={{ animationDelay: `${SKIP_HINT_DELAY_MS}ms` }}

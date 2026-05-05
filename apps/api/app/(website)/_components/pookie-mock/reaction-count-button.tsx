@@ -11,7 +11,7 @@ export const ReactionCountButton = ({
 }) => (
   <div
     aria-label={`${emoji} reaction. Count ${count}`}
-    className="flex h-[33px] w-fit shrink-0 items-center justify-center gap-[3px] rounded-full border border-[#d7d7d7] bg-transparent py-0 pr-3 pl-2 font-[inherit] text-base leading-[22px] font-medium tracking-[-0.01em] text-[#595959]"
+    className="flex h-[33px] w-fit shrink-0 items-center justify-center gap-[3px] rounded-full border border-[#d7d7d7] bg-transparent py-0 pr-3 pl-2 font-[inherit] text-base leading-[22px] font-medium text-[#595959]"
   >
     <span
       aria-hidden="true"

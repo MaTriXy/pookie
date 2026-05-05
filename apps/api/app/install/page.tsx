@@ -131,9 +131,9 @@ const InstallPage = async ({ searchParams }: InstallPageProps) => {
 const CloudInstall = () => (
   <MockShell activeChannel="install">
     <ContentPanel channelName="install">
-      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
-          <h2 className="text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+          <h2 className="text-base leading-6 font-bold text-[#1d1c1d]">
             Managed
           </h2>
           <p>
@@ -151,7 +151,7 @@ const CloudInstall = () => (
         <Divider />
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+          <h2 className="text-base leading-6 font-bold text-[#1d1c1d]">
             Self-host
           </h2>
           <p>
@@ -168,7 +168,7 @@ const CloudInstall = () => (
               View on GitHub
             </OutlineButton>
           </div>
-          <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
+          <p className="text-[13px] leading-[19px] text-[#717274]">
             After deploy, visit <Code>/install</Code> on your URL to finish
             setup. You&apos;ll need <Code>REDIS_URL</Code>,{" "}
             <Code>OPENAI_API_KEY</Code>, and the three <Code>SLACK_*</Code>{" "}
@@ -187,7 +187,7 @@ const CloudInstall = () => (
 const SelfHostInstall = () => (
   <MockShell activeChannel="install">
     <ContentPanel channelName="install">
-      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+      <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
           <p>
             Your self-hosted Pookie is configured. Add it to a Slack workspace
@@ -199,7 +199,7 @@ const SelfHostInstall = () => (
               <ArrowRightIcon className="h-3.5 w-3.5" />
             </PrimaryButton>
           </div>
-          <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
+          <p className="text-[13px] leading-[19px] text-[#717274]">
             Wrong credentials?{" "}
             <Link
               className="text-[#006fa8] underline underline-offset-2 hover:no-underline"
@@ -227,14 +227,14 @@ const SelfHostSetupWizard = async () => {
   return (
     <MockShell activeChannel="install">
       <ContentPanel channelName="install">
-        <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+        <div className="flex flex-col gap-5 pt-1 pb-2 text-base leading-6 font-medium text-[#4d4d4d]">
           <p>
             Deployment live at <Code>{origin}</Code>. Three steps to connect
             Slack.
           </p>
 
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+            <h3 className="flex items-center gap-2 text-base leading-6 font-bold text-[#1d1c1d]">
               <StepBadge>1</StepBadge>
               Create your Slack app
             </h3>
@@ -251,7 +251,7 @@ const SelfHostSetupWizard = async () => {
           </section>
 
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+            <h3 className="flex items-center gap-2 text-base leading-6 font-bold text-[#1d1c1d]">
               <StepBadge>2</StepBadge>
               Copy credentials
             </h3>
@@ -299,12 +299,12 @@ const REDEPLOY_HEADING: Record<HostingPlatform, string> = {
 
 const Step3Redeploy = ({ host }: { host: HostingPlatform }) => (
   <section className="flex flex-col gap-3">
-    <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+    <h3 className="flex items-center gap-2 text-base leading-6 font-bold text-[#1d1c1d]">
       <StepBadge>3</StepBadge>
       {REDEPLOY_HEADING[host]}
     </h3>
     <RedeployBody host={host} />
-    <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
+    <p className="text-[13px] leading-[19px] text-[#717274]">
       After it boots, refresh this page to install.
     </p>
   </section>
@@ -363,7 +363,7 @@ const LEGAL_LINKS = [
 ] as const;
 
 const InstallFooter = () => (
-  <footer className="flex flex-col gap-2 text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
+  <footer className="flex flex-col gap-2 text-[13px] leading-[19px] text-[#717274]">
     <p>
       Stuck?{" "}
       <a

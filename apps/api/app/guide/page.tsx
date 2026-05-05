@@ -37,14 +37,14 @@ const SectionHeading = ({
   step: number;
   children: React.ReactNode;
 }) => (
-  <h3 className="flex items-center gap-2 text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+  <h3 className="flex items-center gap-2 text-base leading-6 font-bold text-[#1d1c1d]">
     <StepBadge>{step}</StepBadge>
     {children}
   </h3>
 );
 
 const BodyText = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+  <p className="text-base leading-6 font-medium text-[#4d4d4d]">
     {children}
   </p>
 );
@@ -72,7 +72,7 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
               <CheckCircle2Icon className="h-3 w-3" />
               Installed
             </span>
-            <h2 className="text-base leading-6 font-bold tracking-[-0.02em] text-[#1d1c1d]">
+            <h2 className="text-base leading-6 font-bold text-[#1d1c1d]">
               Pookie is in {teamLabel || "your Slack"}
             </h2>
             <BodyText>
@@ -96,7 +96,7 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
             <SectionHeading step={1}>Invite Pookie to a channel</SectionHeading>
             <BodyText>In any channel, type:</BodyText>
             <CodeBlock>/invite @pookie</CodeBlock>
-            <p className="text-[13px] leading-[19px] tracking-[-0.01em] text-[#717274]">
+            <p className="text-[13px] leading-[19px] text-[#717274]">
               Or for DMs, just open a new direct message with{" "}
               <Mention name="pookie" /> from the sidebar.
             </p>
@@ -119,7 +119,7 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
 
           <section className="flex flex-col gap-3">
             <SectionHeading step={3}>Try the slash commands</SectionHeading>
-            <ul className="flex flex-col gap-2 text-base leading-6 font-medium tracking-[-0.02em] text-[#4d4d4d]">
+            <ul className="flex flex-col gap-2 text-base leading-6 font-medium text-[#4d4d4d]">
               <li className="flex items-center gap-2">
                 <span aria-hidden>💬</span>
                 <InlineCode>/help</InlineCode>
@@ -135,7 +135,7 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
 
           <SectionDivider />
 
-          <div className="flex gap-3 rounded-lg bg-[#f7f7f7] px-4 py-3 text-[13px] leading-[19px] tracking-[-0.01em] text-[#4d4d4d]">
+          <div className="flex gap-3 rounded-lg bg-[#f7f7f7] px-4 py-3 text-[13px] leading-[19px] text-[#4d4d4d]">
             <CheckCircle2Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#717274]" />
             <span>
               <strong className="font-bold text-[#1d1c1d]">

@@ -14,4 +14,4 @@ export const channelRowBase =
   "flex h-[39px] w-[188px] shrink-0 items-center gap-2 rounded-[11px] pl-[15px] max-[520px]:w-full";
 
 export const sidebarTextBase =
-  "h-6 shrink-0 whitespace-pre-wrap text-lg font-medium leading-6 tracking-[-0.03em]";
+  "h-6 shrink-0 whitespace-pre-wrap text-lg font-medium leading-6";

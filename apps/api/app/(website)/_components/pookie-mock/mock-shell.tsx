@@ -46,7 +46,7 @@ export const ContentPanel = ({
   >
     <div className="shrink-0 bg-white pt-[25px] pr-[22px] pl-[22px] max-[520px]:px-4 max-[520px]:pt-4">
       <header className="mb-5 flex h-[30px] w-full shrink-0 items-center justify-between gap-3">
-        <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold tracking-[-0.03em] text-[#393939]">
+        <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold text-[#393939]">
           <span>#</span>
           <span>{channelName}</span>
         </div>
