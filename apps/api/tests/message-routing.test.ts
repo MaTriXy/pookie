@@ -78,12 +78,10 @@ describe("hasBotParticipatedInThread", () => {
   });
 
   it("works without botUserId (falls back to author.isMe only)", () => {
-    expect(
-      hasBotParticipatedInThread([{ raw: { bot_id: "B123" } }]),
-    ).toBe(false);
-    expect(
-      hasBotParticipatedInThread([{ author: { isMe: true } }]),
-    ).toBe(true);
+    expect(hasBotParticipatedInThread([{ raw: { bot_id: "B123" } }])).toBe(
+      false,
+    );
+    expect(hasBotParticipatedInThread([{ author: { isMe: true } }])).toBe(true);
   });
 });
 

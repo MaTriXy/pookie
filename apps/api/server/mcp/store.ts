@@ -130,13 +130,7 @@ const scanAll = async (pattern: string): Promise<string[]> => {
   let cursor = 0;
 
   do {
-    const scanResult = await redis.scan(
-      cursor,
-      "MATCH",
-      pattern,
-      "COUNT",
-      100,
-    );
+    const scanResult = await redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
     cursor = Number(scanResult[0]);
     results.push(...scanResult[1]);
   } while (cursor !== 0);

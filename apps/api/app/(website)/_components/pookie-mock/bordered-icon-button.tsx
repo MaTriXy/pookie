@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
+
 import animations from "./animations.module.css";
 import { cx, paperItemSurface } from "./styles";
 
@@ -38,7 +39,10 @@ export const BorderedIconButton = ({
   variant: IconControlVariant;
   label: string;
   children: ReactNode;
-} & Omit<ComponentPropsWithoutRef<"button">, "aria-label" | "children" | "className">) => {
+} & Omit<
+  ComponentPropsWithoutRef<"button">,
+  "aria-label" | "children" | "className"
+>) => {
   const classes = iconControlClasses[variant];
 
   return (

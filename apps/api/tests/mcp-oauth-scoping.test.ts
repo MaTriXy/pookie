@@ -6,7 +6,11 @@ import type { McpScope } from "../server/mcp/store";
 
 describe("oauthOwnerId", () => {
   it("returns a team+user-prefixed key for user-scoped MCPs", () => {
-    const scope: McpScope = { kind: "user", userId: "U_OWNER", teamId: "T_TEAM" };
+    const scope: McpScope = {
+      kind: "user",
+      userId: "U_OWNER",
+      teamId: "T_TEAM",
+    };
     expect(oauthOwnerId(scope, "U_REQUESTER")).toBe(
       "team:T_TEAM:user:U_REQUESTER",
     );
@@ -51,15 +55,27 @@ describe("oauthOwnerId", () => {
   });
 
   it("user-scoped key differs per requesting user", () => {
-    const scope: McpScope = { kind: "user", userId: "U_OWNER", teamId: "T_TEAM" };
+    const scope: McpScope = {
+      kind: "user",
+      userId: "U_OWNER",
+      teamId: "T_TEAM",
+    };
     const keyA = oauthOwnerId(scope, "U_ALICE");
     const keyB = oauthOwnerId(scope, "U_BOB");
     expect(keyA).not.toBe(keyB);
   });
 
   it("user-scoped keys differ across teams for the same user", () => {
-    const scopeA: McpScope = { kind: "user", userId: "U_ALICE", teamId: "T_ALPHA" };
-    const scopeB: McpScope = { kind: "user", userId: "U_ALICE", teamId: "T_BETA" };
+    const scopeA: McpScope = {
+      kind: "user",
+      userId: "U_ALICE",
+      teamId: "T_ALPHA",
+    };
+    const scopeB: McpScope = {
+      kind: "user",
+      userId: "U_ALICE",
+      teamId: "T_BETA",
+    };
     expect(oauthOwnerId(scopeA, "U_ALICE")).not.toBe(
       oauthOwnerId(scopeB, "U_ALICE"),
     );

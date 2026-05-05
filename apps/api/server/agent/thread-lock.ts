@@ -1,4 +1,7 @@
-import { REAUTH_NOTICE_TTL_SECONDS, THREAD_LOCK_TTL_SECONDS } from "./constants";
+import {
+  REAUTH_NOTICE_TTL_SECONDS,
+  THREAD_LOCK_TTL_SECONDS,
+} from "./constants";
 
 import type { Redis } from "ioredis";
 
@@ -91,7 +94,10 @@ const parseFollowUp = (raw: unknown): QueuedFollowUp | null => {
   if (typeof raw !== "string") return null;
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (typeof parsed.messageId === "string" && typeof parsed.text === "string") {
+    if (
+      typeof parsed.messageId === "string" &&
+      typeof parsed.text === "string"
+    ) {
       return { messageId: parsed.messageId, text: parsed.text };
     }
     return null;
@@ -133,5 +139,7 @@ export const drainFollowUps = async (
       const parsed = parseFollowUp(rawItem);
       return parsed?.text;
     })
-    .filter((text): text is string => typeof text === "string" && text.length > 0);
+    .filter(
+      (text): text is string => typeof text === "string" && text.length > 0,
+    );
 };

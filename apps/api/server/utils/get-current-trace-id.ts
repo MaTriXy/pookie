@@ -113,6 +113,8 @@ export const recordUsageSpan = (
   if (meta.functionId) attrs["pookiebot.function_id"] = meta.functionId;
   if (meta.threadId) attrs["pookiebot.thread_id"] = meta.threadId;
 
-  const span = pookiebotTracer.startSpan("pookiebot.usage", { attributes: attrs });
+  const span = pookiebotTracer.startSpan("pookiebot.usage", {
+    attributes: attrs,
+  });
   span.end();
 };

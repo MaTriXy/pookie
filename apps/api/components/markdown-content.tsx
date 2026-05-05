@@ -21,7 +21,7 @@ const extractText = (node: ReactNode): string => {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="mt-2 mb-6 text-[20px] font-bold leading-[26px] tracking-[-0.03em] text-[#1d1c1d] first:mt-0">
+    <h1 className="mt-2 mb-6 text-[20px] leading-[26px] font-bold tracking-[-0.03em] text-[#1d1c1d] first:mt-0">
       {children}
     </h1>
   ),

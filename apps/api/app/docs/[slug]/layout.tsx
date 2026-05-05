@@ -2,15 +2,17 @@ import { notFound } from "next/navigation";
 
 import type { ReactNode } from "react";
 
+import { CopyAsMarkdownButton } from "@/components/copy-as-markdown-button";
 import { DOCS, isDocSlug } from "@/lib/docs";
 import { extractToc, readDoc } from "@/lib/docs-content";
 
-import type { DocSlug } from "@/lib/docs";
+import {
+  ContentPanel,
+  MockShell,
+} from "../../(website)/_components/pookie-mock-app";
 
-import { CopyAsMarkdownButton } from "@/components/copy-as-markdown-button";
-
-import { ContentPanel, MockShell } from "../../(website)/_components/pookie-mock-app";
 import type { SidebarSubItem } from "../../(website)/_components/pookie-mock-app";
+import type { DocSlug } from "@/lib/docs";
 
 interface DocSlugLayoutProps {
   children: ReactNode;
@@ -26,7 +28,9 @@ const DocSlugLayout = async ({ children, params }: DocSlugLayoutProps) => {
   const subItems: SidebarSubItem[] = (
     Object.entries(DOCS) as [DocSlug, (typeof DOCS)[DocSlug]][]
   ).map(([docSlug, entry]) => {
-    const label = entry.title.replace(/^Quickstart\s*[—-]\s*/, "").toLowerCase();
+    const label = entry.title
+      .replace(/^Quickstart\s*[—-]\s*/, "")
+      .toLowerCase();
     const isActive = docSlug === slug;
     return {
       label,

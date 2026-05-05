@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+
 import { Sidebar } from "./sidebar";
-import type { SidebarSubItem } from "./sidebar";
 import { cx, panelShadow } from "./styles";
+
+import type { SidebarSubItem } from "./sidebar";
 
 export const MockShell = ({
   activeChannel,
@@ -17,9 +19,7 @@ export const MockShell = ({
       <div className="relative flex w-full flex-col items-center p-0">
         <div className="flex min-h-0 w-fit max-w-full min-w-0 shrink-0 items-start justify-center gap-[clamp(24px,2.2vw,33px)] max-[1040px]:min-h-0 max-[1040px]:flex-col max-[1040px]:items-center">
           <Sidebar activeChannel={activeChannel} subItems={subItems} />
-          <section
-            className="flex min-h-0 w-[min(100%,720px)] min-w-[min(100%,720px)] max-w-full flex-[0_1_720px] shrink flex-col items-center gap-3 max-[1040px]:w-full max-[1040px]:max-w-[967px] max-[920px]:h-auto max-[920px]:w-full max-[920px]:flex-col"
-          >
+          <section className="flex min-h-0 w-[min(100%,720px)] max-w-full min-w-[min(100%,720px)] flex-[0_1_720px] shrink flex-col items-center gap-3 max-[1040px]:w-full max-[1040px]:max-w-[967px] max-[920px]:h-auto max-[920px]:w-full max-[920px]:flex-col">
             {children}
           </section>
         </div>
@@ -45,7 +45,7 @@ export const ContentPanel = ({
   >
     <div className="shrink-0 bg-white pt-[25px] pr-[22px] pl-[22px] max-[520px]:px-5">
       <header className="mb-5 flex h-[30px] w-full shrink-0 items-center justify-between">
-        <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] font-semibold leading-[30px] tracking-[-0.03em] text-[#393939]">
+        <div className="flex h-[30px] min-w-0 items-center gap-1.5 text-[23px] leading-[30px] font-semibold tracking-[-0.03em] text-[#393939]">
           <span>#</span>
           <span>{channelName}</span>
         </div>

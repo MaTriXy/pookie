@@ -6,12 +6,10 @@ const NotFound = () => (
       <span className="text-[64px] font-semibold tracking-[-0.04em] text-[#e0e0e0]">
         404
       </span>
-      <p className="text-[15px] text-[#999]">
-        This page doesn&apos;t exist.
-      </p>
+      <p className="text-[15px] text-[#999]">This page doesn&apos;t exist.</p>
       <Link
         href="/"
-        className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#d7d7d7] bg-white px-4 text-[14px] font-semibold leading-none text-[#393939] no-underline transition-colors hover:bg-[#f8f8f8]"
+        className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#d7d7d7] bg-white px-4 text-[14px] leading-none font-semibold text-[#393939] no-underline transition-colors hover:bg-[#f8f8f8]"
       >
         Go home
       </Link>

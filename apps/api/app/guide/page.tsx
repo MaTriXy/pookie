@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { DISCORD_URL, REPO_URL } from "@/lib/constants";
 
-import { ContentPanel, MockShell } from "../(website)/_components/pookie-mock-app";
+import {
+  ContentPanel,
+  MockShell,
+} from "../(website)/_components/pookie-mock-app";
 
 interface GuidePageProps {
   searchParams: Promise<{
@@ -46,14 +49,15 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
               Pookie is in {teamLabel || "your Slack"}
             </h2>
             <p className="text-[#666]">
-              Three steps to start chatting with Pookie. Takes about thirty seconds.
+              Three steps to start chatting with Pookie. Takes about thirty
+              seconds.
             </p>
           </div>
 
           {slackDeepLink ? (
             <a
               href={slackDeepLink}
-              className="inline-flex h-[33px] w-fit items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-3 text-[14px] font-semibold leading-none text-white no-underline transition-colors hover:bg-[#005e45]"
+              className="inline-flex h-[33px] w-fit items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-3 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
             >
               Open Pookie in Slack →
             </a>
@@ -71,7 +75,8 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
               /invite @pookie
             </pre>
             <p className="text-[12px] text-[#999]">
-              Or for DMs, just open a new direct message with <Code>@pookie</Code> from the sidebar.
+              Or for DMs, just open a new direct message with{" "}
+              <Code>@pookie</Code> from the sidebar.
             </p>
           </section>
 
@@ -83,7 +88,8 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
               Tag Pookie with a question
             </h3>
             <p className="text-[#666]">
-              Mention <Code>@pookie</Code> in any channel or thread. It reads the relevant context and replies inline.
+              Mention <Code>@pookie</Code> in any channel or thread. It reads
+              the relevant context and replies inline.
             </p>
             <pre className="overflow-x-auto rounded-lg bg-[#fafafa] px-4 py-3 font-mono text-[13px] text-[#555]">{`@pookie what did we decide about the Q3 launch?
 @pookie summarize this thread
@@ -104,7 +110,8 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-0.5 text-[#999]">🔌</span>
-                <Code>/mcp</Code> — connect MCP servers to extend Pookie&apos;s tools
+                <Code>/mcp</Code> — connect MCP servers to extend Pookie&apos;s
+                tools
               </li>
             </ul>
           </section>
@@ -115,17 +122,28 @@ const GuidePage = async ({ searchParams }: GuidePageProps) => {
             <CheckCircle2Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#999]" />
             <span>
               <strong className="text-[#393939]">Privacy note: </strong>
-              Pookie only reads channels you invite it to and messages where you tag it.
+              Pookie only reads channels you invite it to and messages where you
+              tag it.
             </span>
           </div>
 
           <footer className="flex flex-wrap items-center gap-3 text-[12px] text-[#999]">
             <span>Need help?</span>
-            <a href={`${REPO_URL}/issues`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#666] underline underline-offset-2">
+            <a
+              href={`${REPO_URL}/issues`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#666] underline underline-offset-2"
+            >
               File an issue <ExternalLinkIcon className="h-3 w-3" />
             </a>
             <span aria-hidden>·</span>
-            <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#666] underline underline-offset-2">
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#666] underline underline-offset-2"
+            >
               Discord <ExternalLinkIcon className="h-3 w-3" />
             </a>
           </footer>

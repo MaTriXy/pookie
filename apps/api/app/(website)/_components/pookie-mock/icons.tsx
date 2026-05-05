@@ -83,7 +83,12 @@ export const SmilePlusIcon = () => (
     width="20"
     height="20"
   >
-    <circle className="fill-[#ffcc00] opacity-0 group-hover:opacity-100" cx="9" cy="11" r="6.5" />
+    <circle
+      className="fill-[#ffcc00] opacity-0 group-hover:opacity-100"
+      cx="9"
+      cy="11"
+      r="6.5"
+    />
     <path
       className="opacity-0 group-hover:opacity-100"
       fill="none"

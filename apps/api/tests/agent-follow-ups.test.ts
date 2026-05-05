@@ -285,21 +285,24 @@ describe("handleSlackMessage follow-up queue", () => {
   it("uploads only the final generated image stream result", async () => {
     const imageData = Buffer.from("generated-image");
     mocks.streamText.mockReturnValue(
-      createStreamTextResult([], [
-        {
-          output: { result: Buffer.from("partial-image").toString("base64") },
-          preliminary: true,
-          toolCallId: "ig_final",
-          toolName: "image_generation",
-          type: "tool-result",
-        },
-        {
-          output: { result: imageData.toString("base64") },
-          toolCallId: "ig_final",
-          toolName: "image_generation",
-          type: "tool-result",
-        },
-      ]),
+      createStreamTextResult(
+        [],
+        [
+          {
+            output: { result: Buffer.from("partial-image").toString("base64") },
+            preliminary: true,
+            toolCallId: "ig_final",
+            toolName: "image_generation",
+            type: "tool-result",
+          },
+          {
+            output: { result: imageData.toString("base64") },
+            toolCallId: "ig_final",
+            toolName: "image_generation",
+            type: "tool-result",
+          },
+        ],
+      ),
     );
 
     const thread = createThread();

@@ -10,11 +10,7 @@ import {
 import { tryRegister } from "./client";
 import { SERVER_NAME_REGEX } from "./constants";
 import { initiateGitHubOAuth, isGitHubOAuthConfigured } from "./github-oauth";
-import {
-  getPresetDisplayName,
-  MCP_PRESETS,
-  resolvePreset,
-} from "./presets";
+import { getPresetDisplayName, MCP_PRESETS, resolvePreset } from "./presets";
 import {
   clearOAuthArtifacts,
   listVisibleServers,
@@ -393,8 +389,10 @@ const postPendingAuthCard = async (
       ),
     })),
   );
-  const pendingAuthStartUrls: Array<{ name: string; authorizationUrl: string }> =
-    [];
+  const pendingAuthStartUrls: Array<{
+    name: string;
+    authorizationUrl: string;
+  }> = [];
   for (const outcome of settled) {
     if (outcome.status === "fulfilled") {
       pendingAuthStartUrls.push(outcome.value);

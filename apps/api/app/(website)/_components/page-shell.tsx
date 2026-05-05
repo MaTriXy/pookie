@@ -15,13 +15,13 @@ export const PageShell = ({
 );
 
 export const PageHeading = ({ children }: { children: ReactNode }) => (
-  <h1 className="text-[26px] font-semibold leading-[32px] tracking-[-0.03em] text-[#393939]">
+  <h1 className="text-[26px] leading-[32px] font-semibold tracking-[-0.03em] text-[#393939]">
     {children}
   </h1>
 );
 
 export const PageSubheading = ({ children }: { children: ReactNode }) => (
-  <h2 className="text-[19px] font-semibold leading-[25px] tracking-[-0.03em] text-[#393939]">
+  <h2 className="text-[19px] leading-[25px] font-semibold tracking-[-0.03em] text-[#393939]">
     {children}
   </h2>
 );
@@ -46,9 +46,7 @@ export const PagePanel = ({
   </div>
 );
 
-export const PageDivider = () => (
-  <hr className="border-t border-[#e8e8e8]" />
-);
+export const PageDivider = () => <hr className="border-t border-[#e8e8e8]" />;
 
 export const PrimaryLink = ({
   href,
@@ -61,7 +59,7 @@ export const PrimaryLink = ({
 }) => (
   <a
     href={href}
-    className="inline-flex h-[38px] items-center gap-2 rounded-lg bg-[#007a5a] px-4 text-[14px] font-semibold leading-none text-white no-underline transition-colors hover:bg-[#005e45]"
+    className="inline-flex h-[38px] items-center gap-2 rounded-lg bg-[#007a5a] px-4 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
   >
     {children}
@@ -79,7 +77,7 @@ export const SecondaryLink = ({
 }) => (
   <a
     href={href}
-    className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#d7d7d7] bg-white px-4 text-[14px] font-semibold leading-none text-[#393939] no-underline transition-colors hover:bg-[#f8f8f8]"
+    className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#d7d7d7] bg-white px-4 text-[14px] leading-none font-semibold text-[#393939] no-underline transition-colors hover:bg-[#f8f8f8]"
     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
   >
     {children}
@@ -94,12 +92,9 @@ export const Badge = ({
   variant?: "default" | "outline" | "muted";
 }) => {
   const styles = {
-    default:
-      "bg-[#393939] text-white",
-    outline:
-      "border border-[#d7d7d7] bg-white text-[#666]",
-    muted:
-      "bg-[#f0f0f0] text-[#666]",
+    default: "bg-[#393939] text-white",
+    outline: "border border-[#d7d7d7] bg-white text-[#666]",
+    muted: "bg-[#f0f0f0] text-[#666]",
   };
   return (
     <span
@@ -110,11 +105,7 @@ export const Badge = ({
   );
 };
 
-export const AlertPanel = ({
-  children,
-}: {
-  children: ReactNode;
-}) => (
+export const AlertPanel = ({ children }: { children: ReactNode }) => (
   <div className="flex gap-3 rounded-xl border border-[#e8e8e8] bg-[#fafafa] px-5 py-4 text-[14px] leading-[21px] text-[#666]">
     {children}
   </div>

@@ -1,7 +1,6 @@
 import { handleSlackMessage } from "./agent";
 import { abortActiveRun } from "./agent/active-runs";
 import { removeDeletedFollowUp } from "./agent/thread-lock";
-import { redis } from "./mcp/redis";
 import { resolveConfig } from "./config";
 import { handlePookieConfigCommand } from "./config/handlers";
 import {
@@ -13,6 +12,7 @@ import {
   handleMcpStatusCommand,
 } from "./mcp/handlers";
 import { MCP_PRESETS } from "./mcp/presets";
+import { redis } from "./mcp/redis";
 import { slackBot } from "./slack-bot";
 import {
   hasBotParticipatedInThread,

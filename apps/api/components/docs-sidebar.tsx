@@ -11,7 +11,7 @@ interface DocsSidebarProps {
 
 export const DocsSidebar = ({ activeSlug, toc }: DocsSidebarProps) => (
   <aside className="flex flex-col gap-0.5 md:sticky md:top-12 md:h-fit md:w-56 md:shrink-0">
-    <span className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-[#999]">
+    <span className="mb-2 px-3 text-[11px] font-semibold tracking-wider text-[#999] uppercase">
       Quickstart
     </span>
     {(Object.entries(DOCS) as [DocSlug, (typeof DOCS)[DocSlug]][]).map(

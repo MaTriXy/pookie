@@ -3,9 +3,12 @@ import { join } from "node:path";
 
 import { MarkdownContent } from "@/components/markdown-content";
 
-import type { Metadata } from "next";
+import {
+  ContentPanel,
+  MockShell,
+} from "../(website)/_components/pookie-mock-app";
 
-import { ContentPanel, MockShell } from "../(website)/_components/pookie-mock-app";
+import type { Metadata } from "next";
 
 // Read once at module load — the markdown is part of the deploy bundle and
 // pinned to the build via outputFileTracingIncludes in next.config.ts.

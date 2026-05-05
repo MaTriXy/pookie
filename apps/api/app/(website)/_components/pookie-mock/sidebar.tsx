@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+
+import { useEffect, useState } from "react";
 
 import { CHANNELS, DIRECT_MESSAGES } from "./data";
 import { ActiveIcon } from "./icons";
@@ -190,7 +191,7 @@ export const Sidebar = ({
   return (
     <aside className="flex h-[calc(100svh-clamp(48px,10vh,112px))] w-[188px] shrink-0 flex-col justify-between pb-[165px] max-[1040px]:h-auto max-[1040px]:w-[min(100%,967px)] max-[1040px]:flex-row max-[1040px]:justify-center max-[1040px]:gap-8 max-[920px]:items-start max-[920px]:justify-start max-[920px]:gap-5 max-[920px]:overflow-x-auto max-[520px]:w-full max-[520px]:flex-col">
       <div className="mt-[30px] flex w-[188px] flex-col gap-1 max-[1040px]:py-0 max-[520px]:w-full">
-        <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg font-semibold leading-6 tracking-[-0.03em] text-[#495058] max-[520px]:w-full">
+        <div className="mb-3 flex h-6 w-[188px] items-center pl-[7px] text-lg leading-6 font-semibold tracking-[-0.03em] text-[#495058] max-[520px]:w-full">
           channels
         </div>
         {CHANNELS.map((channel) => (
@@ -214,4 +215,3 @@ export const Sidebar = ({
     </aside>
   );
 };
-

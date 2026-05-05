@@ -14,10 +14,8 @@ const SLACK_NOT_CONFIGURED_MESSAGE =
 const SLACK_CLIENT_ID_FORMAT = /^\d+\.\d+$/;
 const SLACK_HEX_SECRET_FORMAT = /^[a-f0-9]{32}$/;
 
-const matchesFormat = (
-  value: string | undefined,
-  format: RegExp,
-): boolean => Boolean(value) && format.test(value!);
+const matchesFormat = (value: string | undefined, format: RegExp): boolean =>
+  Boolean(value) && format.test(value!);
 
 export const isSlackConfigured = (): boolean =>
   matchesFormat(env.SLACK_CLIENT_ID, SLACK_CLIENT_ID_FORMAT) &&

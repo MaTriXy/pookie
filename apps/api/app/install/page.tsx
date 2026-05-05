@@ -5,14 +5,17 @@ import Link from "next/link";
 import { env } from "@/env";
 import { RAILWAY_TEMPLATE_URL, REPO_URL, SUPPORT_EMAIL } from "@/lib/constants";
 import { detectHost, isSlackConfigured } from "@/lib/deployment";
-
-import type { HostingPlatform } from "@/lib/deployment";
 import {
   buildSlackAppCreateUrl,
   createPookieManifest,
 } from "@/server/slack/manifest";
 
-import { ContentPanel, MockShell } from "../(website)/_components/pookie-mock-app";
+import {
+  ContentPanel,
+  MockShell,
+} from "../(website)/_components/pookie-mock-app";
+
+import type { HostingPlatform } from "@/lib/deployment";
 
 const REQUIRED_ENV_VARS = [
   "SLACK_CLIENT_ID",
@@ -72,7 +75,7 @@ const PrimaryButton = ({
 }) => (
   <a
     href={href}
-    className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-3 text-[14px] font-semibold leading-none text-white no-underline transition-colors hover:bg-[#005e45]"
+    className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] bg-[#007a5a] px-3 text-[14px] leading-none font-semibold text-white no-underline transition-colors hover:bg-[#005e45]"
     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
   >
     {children}
@@ -90,7 +93,7 @@ const OutlineButton = ({
 }) => (
   <a
     href={href}
-    className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] border border-[#d7d7d7] bg-white px-3 text-[14px] font-semibold leading-none text-[#1d1c1d] no-underline transition-colors hover:bg-[#f8f8f8]"
+    className="inline-flex h-[33px] items-center gap-1.5 rounded-[6px] border border-[#d7d7d7] bg-white px-3 text-[14px] leading-none font-semibold text-[#1d1c1d] no-underline transition-colors hover:bg-[#f8f8f8]"
     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
   >
     {children}
@@ -134,7 +137,8 @@ const CloudInstall = () => (
             Managed
           </h2>
           <p>
-            One click, we host. Add Pookie via Slack OAuth — no infra, no env vars.
+            One click, we host. Add Pookie via Slack OAuth — no infra, no env
+            vars.
           </p>
           <div>
             <PrimaryButton href="/api/slack/install">
@@ -164,8 +168,10 @@ const CloudInstall = () => (
             </OutlineButton>
           </div>
           <p className="text-[13px] text-[#888]">
-            After deploy, visit <Code>/install</Code> on your URL to finish setup.
-            You&apos;ll need <Code>REDIS_URL</Code>, <Code>OPENAI_API_KEY</Code>, and the three <Code>SLACK_*</Code> credentials.
+            After deploy, visit <Code>/install</Code> on your URL to finish
+            setup. You&apos;ll need <Code>REDIS_URL</Code>,{" "}
+            <Code>OPENAI_API_KEY</Code>, and the three <Code>SLACK_*</Code>{" "}
+            credentials.
           </p>
         </section>
 
@@ -183,7 +189,8 @@ const SelfHostInstall = () => (
       <div className="flex flex-col gap-8 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
         <section className="flex flex-col gap-3">
           <p>
-            Your self-hosted Pookie is configured. Add it to a Slack workspace via OAuth.
+            Your self-hosted Pookie is configured. Add it to a Slack workspace
+            via OAuth.
           </p>
           <div>
             <PrimaryButton href="/api/slack/install">
@@ -192,7 +199,10 @@ const SelfHostInstall = () => (
           </div>
           <p className="text-[13px] text-[#888]">
             Wrong credentials?{" "}
-            <Link className="text-[#006fa8] underline underline-offset-2" href="/install?setup=1">
+            <Link
+              className="text-[#006fa8] underline underline-offset-2"
+              href="/install?setup=1"
+            >
               Redo setup
             </Link>
           </p>
@@ -217,7 +227,8 @@ const SelfHostSetupWizard = async () => {
       <ContentPanel channelName="install">
         <div className="flex flex-col gap-8 text-[15px] leading-[23px] tracking-[-0.01em] text-[#4d4d4d]">
           <p>
-            Deployment live at <Code>{origin}</Code>. Three steps to connect Slack.
+            Deployment live at <Code>{origin}</Code>. Three steps to connect
+            Slack.
           </p>
 
           <section className="flex flex-col gap-3">
@@ -226,7 +237,8 @@ const SelfHostSetupWizard = async () => {
               Create your Slack app
             </h3>
             <p>
-              Opens Slack with a pre-filled manifest pointing to <Code>{origin}</Code>.
+              Opens Slack with a pre-filled manifest pointing to{" "}
+              <Code>{origin}</Code>.
             </p>
             <div>
               <PrimaryButton href={slackAppCreateUrl} external>
@@ -241,12 +253,19 @@ const SelfHostSetupWizard = async () => {
               Copy credentials
             </h3>
             <p>
-              In <strong className="text-[#1d1c1d]">Basic Information</strong> on the Slack dashboard, grab:
+              In <strong className="text-[#1d1c1d]">Basic Information</strong>{" "}
+              on the Slack dashboard, grab:
             </p>
             <div className="flex flex-col gap-1 pl-1 font-mono text-[13px]">
-              <span>Client ID → <Code>SLACK_CLIENT_ID</Code></span>
-              <span>Client Secret → <Code>SLACK_CLIENT_SECRET</Code></span>
-              <span>Signing Secret → <Code>SLACK_SIGNING_SECRET</Code></span>
+              <span>
+                Client ID → <Code>SLACK_CLIENT_ID</Code>
+              </span>
+              <span>
+                Client Secret → <Code>SLACK_CLIENT_SECRET</Code>
+              </span>
+              <span>
+                Signing Secret → <Code>SLACK_SIGNING_SECRET</Code>
+              </span>
             </div>
             <div>
               <OutlineButton href="https://api.slack.com/apps" external>
@@ -318,10 +337,16 @@ const RedeployBody = ({ host }: { host: HostingPlatform }) => {
   return (
     <p>
       Paste the three values in your{" "}
-      <a className="text-[#006fa8] underline underline-offset-2" href={dashboardUrls[host]} target="_blank" rel="noopener noreferrer">
+      <a
+        className="text-[#006fa8] underline underline-offset-2"
+        href={dashboardUrls[host]}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {host} dashboard
       </a>{" "}
-      → Environment Variables. {host === "vercel" ? "Then redeploy." : "Auto-redeploys."}
+      → Environment Variables.{" "}
+      {host === "vercel" ? "Then redeploy." : "Auto-redeploys."}
     </p>
   );
 };
@@ -337,13 +362,29 @@ const InstallFooter = () => (
   <footer className="flex flex-col gap-2 text-[13px] text-[#888]">
     <p>
       Stuck?{" "}
-      <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#006fa8] underline underline-offset-2">{SUPPORT_EMAIL}</a>
+      <a
+        href={`mailto:${SUPPORT_EMAIL}`}
+        className="text-[#006fa8] underline underline-offset-2"
+      >
+        {SUPPORT_EMAIL}
+      </a>
       {" · "}
-      <a href={`${REPO_URL}/issues`} target="_blank" rel="noopener noreferrer" className="text-[#006fa8] underline underline-offset-2">GitHub</a>
+      <a
+        href={`${REPO_URL}/issues`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#006fa8] underline underline-offset-2"
+      >
+        GitHub
+      </a>
     </p>
     <nav className="flex flex-wrap items-center gap-x-3">
       {LEGAL_LINKS.map((link) => (
-        <Link key={link.href} href={link.href} className="text-[#888] no-underline transition-colors hover:text-[#4d4d4d]">
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-[#888] no-underline transition-colors hover:text-[#4d4d4d]"
+        >
           {link.label}
         </Link>
       ))}
