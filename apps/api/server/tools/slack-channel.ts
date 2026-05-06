@@ -560,7 +560,11 @@ const formatMessagesForModel = (
 ): string =>
   messages
     .map((message) => {
-      const time = message.timestamp ?? message.ts ?? "";
+      // Use full-precision `ts` (microseconds) over `timestamp` (ISO ms via
+      // `new Date`). The model builds slack permalinks from this string;
+      // ms-precision drops the trailing 3 µs digits and produces broken
+      // `p<seconds><ms>000` URLs.
+      const time = message.ts ?? message.timestamp ?? "";
       const text = message.text || "(no text)";
       return `[${time}] ${message.author}: ${text}`;
     })
