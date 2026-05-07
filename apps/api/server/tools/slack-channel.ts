@@ -7,6 +7,7 @@ import { extractSlackChannelId } from "../slack/schemas";
 import {
   buildSlackAccessNotFoundError,
   getChannelDisplayName,
+  getPlatformErrorCode,
   normalizeToolError,
 } from "../utils/normalize-tool-error";
 import { recordSpanError } from "../utils/record-span-error";
@@ -1247,7 +1248,7 @@ export const slackChannelTools = ({
         .max(64)
         .optional()
         .describe(
-          `Slack emoji shortcode without colons (e.g. 'ok', 'white_check_mark', 'eyes', '+1', 'sparkles'). Defaults to '${SLACK_REACT_DEFAULT_EMOJI}'.`,
+          `Slack emoji shortcode without colons. Use the canonical Slack name (e.g. 'ok', 'white_check_mark', 'eyes', 'sparkles', '+1', 'heart', 'fire', 'tada'). Common renames: red flag → 'triangular_flag_on_post', thumbs up → '+1' or 'thumbsup', check → 'white_check_mark', heart → 'heart'. Defaults to '${SLACK_REACT_DEFAULT_EMOJI}'.`,
         ),
       messageTs: z
         .string()
@@ -1279,7 +1280,33 @@ export const slackChannelTools = ({
       );
       if (normalized.type === "error") return normalized;
 
-      await slack.addReaction(thread.id, targetTs, normalized.result);
+      try {
+        await slack.addReaction(thread.id, targetTs, normalized.result);
+      } catch (caughtError) {
+        const platformCode = getPlatformErrorCode(caughtError);
+        // The shortcode passed Slack's syntactic shape but isn't one Slack
+        // actually recognizes. Hand the model a crib sheet of the most
+        // common name mismatches so it can retry with the canonical
+        // shortcode rather than asking the user to provide one.
+        if (platformCode === "invalid_name") {
+          return toolErr(
+            "validation",
+            `'${normalized.result}' is not a Slack-recognized emoji shortcode (Slack returned invalid_name). Retry with the canonical shortcode. Common gotchas: red flag → \`triangular_flag_on_post\`, thumbs up → \`+1\` (or \`thumbsup\`), thumbs down → \`-1\`, check → \`white_check_mark\` or \`heavy_check_mark\`, heart → \`heart\`, fire → \`fire\`, party → \`tada\`, smile → \`smile\` or \`smiley\`, ok → \`ok\` or \`ok_hand\`. Pick the closest match and call again.`,
+            { code: "invalid_name" },
+          );
+        }
+        // Same emoji already on the message (likely from the deterministic
+        // pet-mode auto-react beating the model's tool call to it). The
+        // user-facing outcome is identical to a fresh add, so report
+        // success rather than surfacing the duplicate-write error.
+        if (platformCode === "already_reacted") {
+          return toolResult({
+            emoji: normalized.result,
+            messageTs: targetTs,
+          });
+        }
+        throw caughtError;
+      }
       return toolResult({ emoji: normalized.result, messageTs: targetTs });
     },
     toModelOutput: (output) => {
