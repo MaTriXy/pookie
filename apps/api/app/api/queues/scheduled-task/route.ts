@@ -1,3 +1,5 @@
+import { CLOUD_EVENT_TYPE_V2BETA } from "@vercel/queue";
+
 import { scheduledTaskMessageSchema } from "@/server/scheduling";
 import { isQueuesAvailable } from "@/server/scheduling/capability";
 import { processScheduledTaskMessage } from "@/server/scheduling/run-task";
@@ -13,14 +15,18 @@ export const maxDuration = 799;
 //
 // Defense-in-depth: we additionally check that the request has the
 // CloudEvent v2beta `ce-type` header that Vercel's queue infrastructure
-// sets on every delivery. This is auth-by-shape, not auth-by-signature —
-// an attacker who can reach the route could forge it — but it filters
-// trivial "POST a JSON body" probes and the actual security boundary is
-// vercel.json's air-gap. Earlier versions of this check also required
-// `x-vercel-id`; that header is set on Vercel's *public* edge invocations
-// and is not guaranteed on internal queue-trigger invocations, so we
-// dropped it after observing legitimate deliveries get 403'd.
-const VERCEL_QUEUE_CE_TYPE = "io.vercel.queue.message.v2beta";
+// sets on every delivery (currently `com.vercel.queue.v2beta` — imported
+// as a constant from the SDK so a future bump can't silently mismatch).
+// This is auth-by-shape, not auth-by-signature — an attacker who can
+// reach the route could forge it — but it filters trivial "POST a JSON
+// body" probes and the actual security boundary is vercel.json's
+// air-gap.
+//
+// Earlier versions of this file hardcoded a wrong constant
+// (`io.vercel.queue.message.v2beta`) and additionally required
+// `x-vercel-id`. The wrong constant 403'd every legitimate delivery in
+// production; `x-vercel-id` isn't reliably set on internal queue-trigger
+// invocations. Both removed.
 
 const QUEUES_UNAVAILABLE_RESPONSE = {
   error: "queues_unavailable",
@@ -35,7 +41,7 @@ const FORBIDDEN_RESPONSE = {
 } as const;
 
 const looksLikeQueueDelivery = (request: Request): boolean =>
-  request.headers.get("ce-type") === VERCEL_QUEUE_CE_TYPE;
+  request.headers.get("ce-type") === CLOUD_EVENT_TYPE_V2BETA;
 
 const handleQueueMessage = async (
   rawMessage: unknown,
