@@ -97,9 +97,18 @@ const buildPostBody = (
   return `_(scheduled by <@${record.createdByUserId}>)_ ${mention}${safePrompt}`;
 };
 
+interface RunResult {
+  // True when we ran (or attempted to run) the agent. False when we
+  // observed a cancellation between the consumer's initial record load
+  // and the actual post — the caller should treat this as a no-op fire,
+  // NOT a successful run that needs post-run cleanup (which would
+  // double-delete and double-publish).
+  ran: boolean;
+}
+
 const runScheduledTaskInner = async (
   record: ScheduledTaskRecord,
-): Promise<void> => {
+): Promise<RunResult> => {
   const slack: SlackAdapter = slackBot.getAdapter("slack");
 
   // The slack adapter resolves the bot token from per-request context that
@@ -116,10 +125,27 @@ const runScheduledTaskInner = async (
       teamId: record.teamId,
       taskId: record.id,
     });
-    return;
+    return { ran: false };
   }
 
-  await slack.withBotToken(installation.botToken, async () => {
+  return slack.withBotToken(installation.botToken, async () => {
+    // Late-cancel re-check: closes the race where the user calls
+    // cron_delete AFTER the consumer's initial loadScheduledTask but
+    // BEFORE we post the visible "say hi" / run the agent. Without this,
+    // a sub-minute cron could deliver one extra "queued gremlin" fire
+    // post-cancel because the consumer was already mid-flight when the
+    // cancel committed. We can't abort an already-started agent run —
+    // but we can avoid even posting the prompt if the cancel landed in
+    // time.
+    const fresh = await loadScheduledTask(record.id);
+    if (!fresh || fresh.cancelled) {
+      logger.info("[scheduling] cancellation observed before fire — aborting", {
+        taskId: record.id,
+      });
+      if (fresh) await deleteScheduledTask(fresh);
+      return { ran: false };
+    }
+
     const postBody = buildPostBody(record, slack.botUserId);
     const promptForAgent = slack.botUserId
       ? `<@${slack.botUserId}> ${record.prompt}`
@@ -137,7 +163,7 @@ const runScheduledTaskInner = async (
         promptForAgent,
         record.targetChannelId,
       );
-      return;
+      return { ran: true };
     }
 
     // Default path: reply in the originating thread.
@@ -165,6 +191,7 @@ const runScheduledTaskInner = async (
       thread,
       buildSyntheticMessage(record, postedTs, promptForAgent),
     );
+    return { ran: true };
   });
 };
 
@@ -324,8 +351,9 @@ export const processScheduledTaskMessage = async ({
     return { status: "republished", taskId: record.id };
   }
 
+  let runResult: RunResult;
   try {
-    await runScheduledTaskInner(record);
+    runResult = await runScheduledTaskInner(record);
   } catch (runError) {
     const errorMessage =
       runError instanceof Error ? runError.message : String(runError);
@@ -336,6 +364,13 @@ export const processScheduledTaskMessage = async ({
       error: redactError(errorMessage),
     });
     return trackFailure(record, errorMessage);
+  }
+
+  // Late-cancel observed inside runScheduledTaskInner — the record was
+  // already cleaned up there. Don't double-delete via the post-run path,
+  // and don't publish the next chained fire (the chain ends here).
+  if (!runResult.ran) {
+    return { status: "cancelled", taskId: record.id };
   }
 
   if (!record.recurring) {

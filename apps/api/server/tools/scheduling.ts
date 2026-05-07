@@ -317,7 +317,7 @@ const cronDeleteTool = (context: SchedulingContext) =>
     toModelOutput: (output) =>
       output.type === "error"
         ? output.error.message
-        : `cancelled cron job ${output.result.id}`,
+        : `cancelled cron job ${output.result.id}. note: an in-flight fire that was already mid-execution when the cancel landed may still complete (one extra post for sub-minute schedules); the chain is guaranteed to stop after that.`,
   });
 
 export const schedulingTools = (context: SchedulingContext) => ({

@@ -458,6 +458,50 @@ describe("processScheduledTaskMessage", () => {
     });
   });
 
+  describe("late-cancel race (cancellation between consumer-load and fire)", () => {
+    it("aborts the fire when the record is cancelled BETWEEN the initial load and the visible post", async () => {
+      // Simulate the race: the first loadScheduledTask (at consumer entry)
+      // returns the record un-cancelled, but the second one (right before
+      // the post inside withBotToken) sees cancelled=true because the
+      // user's cron_delete committed in the interim.
+      mocks.loadScheduledTask
+        .mockResolvedValueOnce(baseRecord)
+        .mockResolvedValueOnce({ ...baseRecord, cancelled: true });
+
+      const result = await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-late-cancel",
+      });
+
+      // Status is `cancelled`, not `ran` — the post-run cleanup path
+      // would otherwise double-delete and (for recurring tasks) publish
+      // the next chained fire, defeating the cancel.
+      expect(result.status).toBe("cancelled");
+      // Visible post NEVER happened (the gremlin was caught at the door).
+      expect(mocks.threadPost).not.toHaveBeenCalled();
+      expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
+      // deleteScheduledTask called exactly once: by the late-cancel
+      // re-check inside runScheduledTaskInner.
+      expect(mocks.deleteScheduledTask).toHaveBeenCalledTimes(1);
+      expect(mocks.publishScheduledTaskMessage).not.toHaveBeenCalled();
+    });
+
+    it("aborts the fire when the record was deleted between load and post", async () => {
+      mocks.loadScheduledTask
+        .mockResolvedValueOnce(baseRecord)
+        .mockResolvedValueOnce(null);
+
+      const result = await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-late-deleted",
+      });
+
+      expect(result.status).toBe("cancelled");
+      expect(mocks.threadPost).not.toHaveBeenCalled();
+      expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
+    });
+  });
+
   describe("target-channel routing", () => {
     const targetRecord: ScheduledTaskRecord = {
       ...baseRecord,
