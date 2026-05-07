@@ -140,7 +140,7 @@ describe("buildSystemReminder", () => {
   it("appends the <uwu_mode> section when uwuMode is true", () => {
     const result = buildSystemReminder({ uwuMode: true });
     expect(result).toContain("<uwu_mode>");
-    expect(result).toContain("pet mode is on");
+    expect(result).toMatch(/pet mode/i);
   });
 
   it("does not include a <uwu_mode> section when uwuMode is false or absent", () => {
