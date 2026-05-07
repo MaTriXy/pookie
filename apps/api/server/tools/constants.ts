@@ -47,3 +47,8 @@ export const SLACK_FILE_CONTENT_MAX_BYTES = 1_000_000;
 export const SLACK_FILE_CONTENT_MAX_CHARS = 12_000;
 
 export const SLACK_CANVAS_MARKDOWN_MAX_CHARS = 50_000;
+
+// Default reaction Pookie adds when slack_react_to_message is called without
+// an explicit emoji. `:ok:` (🆗) is universally available across Slack
+// workspaces and reads as a clean, low-key "got it".
+export const SLACK_REACT_DEFAULT_EMOJI = "ok";

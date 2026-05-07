@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SLACK_EMOJI_SHORTCODE_REGEX } from "../utils/slack-emoji-shortcode";
+
 export const personalityOptionSchema = z.enum([
   "cute",
   "balanced",
@@ -22,7 +24,7 @@ const reactionEmojiSchema = z
   .min(1)
   .max(64)
   .regex(
-    /^[a-z0-9_+-]+$/,
+    SLACK_EMOJI_SHORTCODE_REGEX,
     "reaction emoji must be a slack emoji shortcode (letters, numbers, underscores, +, -)",
   );
 

@@ -136,6 +136,26 @@ describe("buildSystemReminder", () => {
     expect(result).toContain("<connected_mcp_servers>");
     expect(result).not.toContain("<available_mcp_presets>");
   });
+
+  it("appends the <uwu_mode> section when uwuMode is true", () => {
+    const result = buildSystemReminder({ uwuMode: true });
+    expect(result).toContain("<uwu_mode>");
+    expect(result).toContain("pet mode is on");
+  });
+
+  it("does not include a <uwu_mode> section when uwuMode is false or absent", () => {
+    expect(buildSystemReminder({ uwuMode: false })).not.toContain("<uwu_mode>");
+    expect(buildSystemReminder({})).not.toContain("<uwu_mode>");
+  });
+
+  it("emits both follow-up and uwu sections together when both apply", () => {
+    const result = buildSystemReminder({
+      followUpMessages: ["also do Y"],
+      uwuMode: true,
+    });
+    expect(result).toContain("<user_follow_ups>");
+    expect(result).toContain("<uwu_mode>");
+  });
 });
 
 describe("injectSystemReminderIntoLastUserMessage", () => {

@@ -45,6 +45,7 @@ import {
   tryAcquireThreadLock,
   tryMarkReauthNoticeSent,
 } from "./thread-lock";
+import { detectUwuTrigger } from "./uwu-mode";
 
 import type { OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import type { SlackAdapter } from "@chat-adapter/slack";
@@ -219,7 +220,15 @@ const runAgentRound = async (options: {
   // stale but stable, which is what cache wants.
   const openai = createProvider();
 
-  const reminderBody = buildSystemReminder({ followUpMessages, mcpServers });
+  const uwuMode = detectUwuTrigger([
+    currentMessage?.text,
+    ...(followUpMessages ?? []),
+  ]);
+  const reminderBody = buildSystemReminder({
+    followUpMessages,
+    mcpServers,
+    uwuMode,
+  });
   const messagesForModel = reminderBody
     ? injectSystemReminderIntoLastUserMessage(
         conversationMessages,

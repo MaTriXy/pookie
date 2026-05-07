@@ -1,4 +1,5 @@
 import { MCP_PRESETS, resolvePreset } from "../mcp/presets";
+import { UWU_MODE_SECTION } from "./uwu-mode";
 
 import type { ModelMessage, UserContent } from "ai";
 
@@ -78,12 +79,13 @@ const buildAvailableMcpPresetsSection = (
 export interface SystemReminderContext {
   followUpMessages?: string[];
   mcpServers?: McpServerSummary[];
+  uwuMode?: boolean;
 }
 
 export const buildSystemReminder = (
   context: SystemReminderContext,
 ): string | undefined => {
-  const { followUpMessages, mcpServers } = context;
+  const { followUpMessages, mcpServers, uwuMode } = context;
   const sections: string[] = [];
 
   const connectedSection = buildConnectedMcpServersSection(mcpServers);
@@ -102,6 +104,8 @@ export const buildSystemReminder = (
       `<user_follow_ups>\nsent while you were responding (also above in history).${ruleSuffix}\n${quoted}\n</user_follow_ups>`,
     );
   }
+
+  if (uwuMode) sections.push(UWU_MODE_SECTION);
 
   if (sections.length === 0) return undefined;
   return sections.join("\n\n");

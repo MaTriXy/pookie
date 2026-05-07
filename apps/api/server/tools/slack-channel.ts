@@ -10,6 +10,7 @@ import {
   normalizeToolError,
 } from "../utils/normalize-tool-error";
 import { recordSpanError } from "../utils/record-span-error";
+import { isValidSlackEmojiShortcode } from "../utils/slack-emoji-shortcode";
 import { getISOFromSlackTimestamp } from "../utils/slack-timestamp";
 import { slackTracer } from "../utils/slack-tracer";
 import { truncateSnippet } from "../utils/truncate-snippet";
@@ -23,6 +24,7 @@ import {
   SLACK_FILE_CONTENT_MAX_BYTES,
   SLACK_FILE_CONTENT_MAX_CHARS,
   SLACK_MESSAGE_SNIPPET_MAX_CHARS,
+  SLACK_REACT_DEFAULT_EMOJI,
   SLACK_THREAD_DEFAULT_LIMIT,
 } from "./constants";
 import { resolveTokenContext } from "./slack-search";
@@ -44,6 +46,19 @@ interface SlackChannelToolContext {
   slack: SlackAdapter;
   thread: ChatSDK.Thread;
 }
+
+const normalizeEmojiShortcode = (
+  rawEmoji: string,
+): PookieToolResult<string> => {
+  const stripped = rawEmoji.trim().replace(/^:|:$/g, "");
+  if (!isValidSlackEmojiShortcode(stripped)) {
+    return toolErr(
+      "validation",
+      `'${rawEmoji}' is not a valid Slack emoji shortcode. Use lowercase letters, digits, underscores, '+' or '-' (e.g. ok, white_check_mark, +1).`,
+    );
+  }
+  return toolResult(stripped);
+};
 
 interface SlackSession {
   botToken?: string;
@@ -1217,6 +1232,55 @@ export const slackChannelTools = ({
     },
   });
 
+  const reactionResultSchema = z.object({
+    emoji: z.string(),
+    messageTs: z.string(),
+  });
+
+  const slack_react_to_message = defineTool({
+    description:
+      "Add an emoji reaction to a Slack message. Use for a quick acknowledgement, status signal, or playful response when a reaction is more apt than a reply (e.g. acknowledging a 'thanks', confirming an action completed, or just vibing with the user). Defaults to reacting to the user's current triggering message with :ok:. Pass `messageTs` to react to a specific message you've already retrieved (e.g. from slack_channel_history or slack_read_thread).",
+    inputSchema: z.object({
+      emoji: z
+        .string()
+        .min(1)
+        .max(64)
+        .optional()
+        .describe(
+          `Slack emoji shortcode without colons (e.g. 'ok', 'white_check_mark', 'eyes', '+1', 'sparkles'). Defaults to '${SLACK_REACT_DEFAULT_EMOJI}'.`,
+        ),
+      messageTs: z
+        .string()
+        .optional()
+        .describe(
+          "Slack message ts string like 1712345678.000100. Defaults to the user's current message that triggered this turn.",
+        ),
+    }),
+    resultSchema: reactionResultSchema,
+    errorFallback: "failed to react to message",
+    execute: async ({ emoji, messageTs }) => {
+      const targetTs = messageTs ?? currentMessage?.id;
+      if (!targetTs) {
+        return toolErr(
+          "validation",
+          "no message timestamp available to react to. provide messageTs explicitly when there isn't a triggering user message in context.",
+        );
+      }
+
+      const normalized = normalizeEmojiShortcode(
+        emoji ?? SLACK_REACT_DEFAULT_EMOJI,
+      );
+      if (normalized.type === "error") return normalized;
+
+      await slack.addReaction(thread.id, targetTs, normalized.result);
+      return toolResult({ emoji: normalized.result, messageTs: targetTs });
+    },
+    toModelOutput: (output) => {
+      if (output.type === "error") return formatToolErrorForModel(output.error);
+      return `reacted with :${output.result.emoji}: on message ${output.result.messageTs}`;
+    },
+  });
+
   return {
     slack_channel_history,
     slack_read_thread,
@@ -1224,5 +1288,6 @@ export const slackChannelTools = ({
     slack_check_channel_access,
     slack_list_channels,
     slack_create_canvas,
+    slack_react_to_message,
   };
 };
