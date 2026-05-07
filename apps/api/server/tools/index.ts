@@ -2,6 +2,7 @@ import { resolvePreset } from "../mcp/presets";
 import { createProvider } from "../openai-provider";
 import { sanitizeMcpToolArgs } from "../utils/sanitize-mcp-tool-args";
 import { forget, recall, remember } from "./memory";
+import { schedulingTools } from "./scheduling";
 import { search } from "./search";
 import { slackChannelTools } from "./slack-channel";
 
@@ -87,6 +88,13 @@ export const buildToolset = (
     remember: remember(context.state, context.teamId),
     recall: recall(context.state, context.teamId),
     forget: forget(context.state, context.teamId),
+    ...schedulingTools({
+      teamId: context.teamId,
+      channelId: context.channelId,
+      userId: context.userId,
+      threadId: context.thread.id,
+      isDM: context.thread.isDM,
+    }),
   };
 
   const mcpSearchToolSources: McpSearchToolSource[] = (
