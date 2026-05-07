@@ -46,7 +46,14 @@ vi.mock("chat", () => ({
 
 vi.mock("../server/slack-bot", () => ({
   slackBot: {
-    getAdapter: vi.fn(() => ({ botUserId: "UPOOKIE" })),
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getAdapter: vi.fn(() => ({
+      botUserId: "UPOOKIE",
+      getInstallation: vi.fn().mockResolvedValue({
+        botToken: "xoxb-test-bot-token",
+      }),
+      withBotToken: <T>(_token: string, fn: () => T): T => fn(),
+    })),
   },
 }));
 

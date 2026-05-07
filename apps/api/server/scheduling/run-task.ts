@@ -99,6 +99,24 @@ const runScheduledTaskInner = async (
   record: ScheduledTaskRecord,
 ): Promise<void> => {
   const slack: SlackAdapter = slackBot.getAdapter("slack");
+
+  // The slack adapter resolves the bot token from per-request context that
+  // a webhook handler sets implicitly. Queue invocations have NO inbound
+  // webhook, so we must look up the workspace's installation by teamId
+  // and wrap the entire run (refresh, post, agent) in `withBotToken`.
+  // Without this, every adapter call throws AUTH_FAILED ("No bot token
+  // available. In multi-workspace mode, ensure the webhook is being
+  // processed.") and the user sees nothing.
+  await slackBot.initialize();
+  const installation = await slack.getInstallation(record.teamId);
+  if (!installation?.botToken) {
+    logger.warn("[scheduling] no slack installation for team — skipping fire", {
+      teamId: record.teamId,
+      taskId: record.id,
+    });
+    return;
+  }
+
   const thread = ThreadImpl.fromJSON({
     _type: "chat:Thread",
     adapterName: "slack",
@@ -106,31 +124,35 @@ const runScheduledTaskInner = async (
     channelId: record.channelId,
     isDM: record.isDM,
   });
-  await thread
-    .refresh()
-    .catch((refreshError: unknown) =>
-      logger.warn("[scheduling] failed to refresh thread", refreshError),
+
+  await slack.withBotToken(installation.botToken, async () => {
+    await thread
+      .refresh()
+      .catch((refreshError: unknown) =>
+        logger.warn("[scheduling] failed to refresh thread", refreshError),
+      );
+
+    // Visible post: sanitized prompt + scheduler attribution + bot mention.
+    // Synthetic message text seen by the agent: the original (un-stripped)
+    // prompt, so the agent can reason about and respond to the full intent.
+    const postBody = buildPostBody(record, slack.botUserId);
+    const promptForAgent = slack.botUserId
+      ? `<@${slack.botUserId}> ${record.prompt}`
+      : record.prompt;
+    const postedMessage = await thread
+      .post({ markdown: postBody })
+      .catch((postError: unknown) => {
+        logger.warn("[scheduling] failed to post self-prompt", postError);
+        return undefined;
+      });
+    const postedTs =
+      postedMessage?.id ?? `scheduled-${record.id}-${Date.now()}`;
+
+    await handleSlackMessage(
+      thread,
+      buildSyntheticMessage(record, postedTs, promptForAgent),
     );
-
-  // Visible post: sanitized prompt + scheduler attribution + bot mention.
-  // Synthetic message text seen by the agent: the original (un-stripped)
-  // prompt, so the agent can reason about and respond to the full intent.
-  const postBody = buildPostBody(record, slack.botUserId);
-  const promptForAgent = slack.botUserId
-    ? `<@${slack.botUserId}> ${record.prompt}`
-    : record.prompt;
-  const postedMessage = await thread
-    .post({ markdown: postBody })
-    .catch((postError: unknown) => {
-      logger.warn("[scheduling] failed to post self-prompt", postError);
-      return undefined;
-    });
-  const postedTs = postedMessage?.id ?? `scheduled-${record.id}-${Date.now()}`;
-
-  await handleSlackMessage(
-    thread,
-    buildSyntheticMessage(record, postedTs, promptForAgent),
-  );
+  });
 };
 
 const trackFailure = async (
