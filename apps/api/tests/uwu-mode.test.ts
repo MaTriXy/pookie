@@ -23,12 +23,28 @@ describe("detectUwuTrigger", () => {
   it("matches the trigger when wrapped in slack emoji colons", () => {
     expect(detectUwuTrigger([":uwu: hi"])).toBe(true);
     expect(detectUwuTrigger([":owo:"])).toBe(true);
+    expect(detectUwuTrigger([":meow:"])).toBe(true);
   });
 
-  it("does not match when uwu/owo is glued to surrounding word characters", () => {
+  it("matches a bare 'meow' and common cat-verb inflections", () => {
+    expect(detectUwuTrigger(["meow"])).toBe(true);
+    expect(detectUwuTrigger(["meow at me pookie"])).toBe(true);
+    expect(detectUwuTrigger(["she's meowing again"])).toBe(true);
+    expect(detectUwuTrigger(["the cat meows a lot"])).toBe(true);
+    expect(detectUwuTrigger(["MEOW!!"])).toBe(true);
+  });
+
+  it("matches stretched uwu/owo forms via the leading boundary", () => {
+    expect(detectUwuTrigger(["uwuwu"])).toBe(true);
+    expect(detectUwuTrigger(["owowo"])).toBe(true);
+  });
+
+  it("does not match when a trigger is glued to preceding word characters", () => {
     expect(detectUwuTrigger(["tower"])).toBe(false);
     expect(detectUwuTrigger(["pikachuuwu"])).toBe(false);
     expect(detectUwuTrigger(["lowowoman"])).toBe(false);
+    expect(detectUwuTrigger(["homemeow"])).toBe(false);
+    expect(detectUwuTrigger(["tomorrow"])).toBe(false);
   });
 
   it("returns false for a normal message with no trigger", () => {
