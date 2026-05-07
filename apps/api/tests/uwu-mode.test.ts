@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { detectUwuTrigger, UWU_MODE_SECTION } from "../server/agent/uwu-mode";
+import {
+  detectUwuTrigger,
+  findUwuTriggerMessage,
+  pickRandomCatEmoji,
+  UWU_MODE_SECTION,
+} from "../server/agent/uwu-mode";
 
 describe("detectUwuTrigger", () => {
   it("matches a bare 'uwu'", () => {
@@ -71,6 +76,62 @@ describe("detectUwuTrigger", () => {
 
   it("ignores undefined entries while still matching real triggers", () => {
     expect(detectUwuTrigger([undefined, "uwu hi", undefined])).toBe(true);
+  });
+});
+
+describe("findUwuTriggerMessage", () => {
+  it("returns the first message whose text contains a trigger", () => {
+    const messages = [
+      { id: "1", text: "first" },
+      { id: "2", text: "uwu hi" },
+      { id: "3", text: "third" },
+    ];
+    expect(findUwuTriggerMessage(messages)?.id).toBe("2");
+  });
+
+  it("prefers an earlier triggering message over a later one", () => {
+    const messages = [
+      { id: "a", text: "meow first" },
+      { id: "b", text: "uwu also" },
+    ];
+    expect(findUwuTriggerMessage(messages)?.id).toBe("a");
+  });
+
+  it("returns undefined when no message triggers", () => {
+    const messages = [
+      { id: "1", text: "hello" },
+      { id: "2", text: "tomorrow" },
+    ];
+    expect(findUwuTriggerMessage(messages)).toBeUndefined();
+  });
+
+  it("skips undefined slots in the candidate list", () => {
+    const messages = [undefined, { id: "x", text: "owo there" }, undefined];
+    expect(findUwuTriggerMessage(messages)?.id).toBe("x");
+  });
+
+  it("ignores entries with missing text", () => {
+    const messages = [{ id: "1" }, { id: "2", text: "nya meow" }];
+    expect(findUwuTriggerMessage(messages)?.id).toBe("2");
+  });
+});
+
+describe("pickRandomCatEmoji", () => {
+  it("returns a known cat shortcode every call", () => {
+    const allowed = new Set([
+      "heart_eyes_cat",
+      "smiley_cat",
+      "smile_cat",
+      "joy_cat",
+      "smirk_cat",
+      "kissing_cat",
+      "cat",
+      "cat2",
+      "paw_prints",
+    ]);
+    for (let attempt = 0; attempt < 100; attempt++) {
+      expect(allowed.has(pickRandomCatEmoji())).toBe(true);
+    }
   });
 });
 

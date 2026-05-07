@@ -45,7 +45,11 @@ import {
   tryAcquireThreadLock,
   tryMarkReauthNoticeSent,
 } from "./thread-lock";
-import { detectUwuTrigger } from "./uwu-mode";
+import {
+  detectUwuTrigger,
+  findUwuTriggerMessage,
+  pickRandomCatEmoji,
+} from "./uwu-mode";
 
 import type { OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import type { SlackAdapter } from "@chat-adapter/slack";
@@ -423,6 +427,23 @@ export const handleSlackMessage = async (
     }
 
     await thread.startTyping();
+
+    // Pet-mode auto-reaction. Fires deterministically (not via the model)
+    // because relying on the LLM to remember to call slack_react_to_message
+    // is unreliable in practice -- it skips the call when it's already
+    // generating a chatty pet-mode reply. Best-effort, fire-and-forget;
+    // a duplicate `already_reacted` from Slack here is harmless.
+    const petTriggerMessage = findUwuTriggerMessage([
+      currentMessage,
+      ...(skippedMessages ?? []),
+    ]);
+    if (petTriggerMessage) {
+      void slack
+        .addReaction(thread.id, petTriggerMessage.id, pickRandomCatEmoji())
+        .catch((reactionError: unknown) =>
+          logger.warn("[agent] pet-mode auto-react failed:", reactionError),
+        );
+    }
 
     const traceId = isTracingEnabled ? getCurrentTraceId() : undefined;
     if (isTracingEnabled) {

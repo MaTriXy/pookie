@@ -11,6 +11,11 @@
 
 const UWU_TRIGGER_PATTERN = /\b(uwu|owo|meow)/i;
 
+export interface UwuTriggerCandidate {
+  id: string;
+  text?: string;
+}
+
 export const detectUwuTrigger = (
   texts: ReadonlyArray<string | undefined>,
 ): boolean =>
@@ -18,6 +23,39 @@ export const detectUwuTrigger = (
     (candidateText) =>
       candidateText !== undefined && UWU_TRIGGER_PATTERN.test(candidateText),
   );
+
+// Returns the first message whose text triggers pet mode, so callers can
+// react on that exact message (the user's actual "uwu") rather than guessing.
+export const findUwuTriggerMessage = <
+  Candidate extends UwuTriggerCandidate | undefined,
+>(
+  candidates: ReadonlyArray<Candidate>,
+): Exclude<Candidate, undefined> | undefined =>
+  candidates.find(
+    (candidate): candidate is Exclude<Candidate, undefined> =>
+      candidate !== undefined &&
+      candidate.text !== undefined &&
+      UWU_TRIGGER_PATTERN.test(candidate.text),
+  );
+
+// Slack's built-in cat-face shortcodes. Picked at random so multiple
+// pet-mode turns in a thread don't all get the same reaction.
+const CAT_REACTION_EMOJIS = [
+  "heart_eyes_cat",
+  "smiley_cat",
+  "smile_cat",
+  "joy_cat",
+  "smirk_cat",
+  "kissing_cat",
+  "cat",
+  "cat2",
+  "paw_prints",
+] as const;
+
+export const pickRandomCatEmoji = (): string => {
+  const index = Math.floor(Math.random() * CAT_REACTION_EMOJIS.length);
+  return CAT_REACTION_EMOJIS[index] ?? "cat";
+};
 
 const UWU_PERSONALITY_OVERRIDE = `the user hit a kitty trigger -- "uwu", "owo", or "meow". MAXIMUM pet mode for this turn. drop your usual register entirely. you are an actual cat trying to type a message. commit to the bit. half-measures are forbidden -- if you catch yourself writing a normal sentence, you are doing it wrong.
 
