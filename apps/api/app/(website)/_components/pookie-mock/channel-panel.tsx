@@ -27,9 +27,7 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
   ssr: false,
 });
 
-let emojiPickerPreloadPromise:
-  | Promise<typeof EmojiPickerModule>
-  | undefined;
+let emojiPickerPreloadPromise: Promise<typeof EmojiPickerModule> | undefined;
 
 const preloadEmojiPicker = () => {
   emojiPickerPreloadPromise ??= import("emoji-picker-react");
@@ -87,9 +85,7 @@ const IntroMessage = ({
       )}
     />
     <div className="flex min-w-0 flex-col gap-0.5 text-xl leading-[25px] max-[520px]:text-[19px] max-[520px]:leading-6">
-      <div className="leading-[inherit] font-bold text-[#1d1c1d]">
-        {sender}
-      </div>
+      <div className="leading-[inherit] font-bold text-[#1d1c1d]">{sender}</div>
       <div className="flex flex-wrap items-center gap-[7px] leading-[inherit] font-medium text-[#4d4d4d]">
         {showMention && <Mention name="pookie" />}
         <span>{body}</span>
@@ -400,7 +396,7 @@ export const ChannelPanel = () => {
         "relative flex h-[calc(100svh-clamp(48px,10vh,112px)-165px)] w-[720px] max-w-full flex-[0_0_auto] shrink flex-col overflow-hidden rounded-[18px] bg-white max-[920px]:h-auto max-[920px]:w-full max-[920px]:min-w-0 max-[920px]:basis-auto",
       )}
     >
-      <div className="shrink-0 bg-white pt-5 pr-2 pl-[25px] max-[520px]:pr-4 max-[520px]:pl-[19px] max-[520px]:pt-4">
+      <div className="shrink-0 bg-white pt-5 pr-2 pl-[25px] max-[520px]:pt-4 max-[520px]:pr-4 max-[520px]:pl-[19px]">
         <ChannelHeader />
       </div>
 
@@ -433,8 +429,9 @@ export const ChannelPanel = () => {
             sender="pookie"
             body={
               <>
-                looks like <Mention name="nisarg" href="https://x.com/nisargptel" /> shipped the dashboard
-                refresh on Tuesday:
+                looks like{" "}
+                <Mention name="nisarg" href="https://x.com/nisargptel" />{" "}
+                shipped the dashboard refresh on Tuesday:
               </>
             }
             avatar="pookie"

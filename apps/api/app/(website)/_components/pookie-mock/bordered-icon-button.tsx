@@ -1,5 +1,4 @@
 import { forwardRef } from "react";
-
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import animations from "./animations.module.css";
@@ -51,43 +50,36 @@ export const BorderedIconButton = forwardRef<
   BorderedIconButtonProps
 >(
   (
-    {
-      variant,
-      label,
-      children,
-      disabled,
-      interactive = true,
-      ...buttonProps
-    },
+    { variant, label, children, disabled, interactive = true, ...buttonProps },
     ref,
   ) => {
-  const classes = iconControlClasses[variant];
+    const classes = iconControlClasses[variant];
 
-  return (
-    <button
-      ref={ref}
-      aria-label={label}
-      className={cx(
-        interactive && animations.actionButton,
-        "relative grid shrink-0 grid-cols-1 grid-rows-1 appearance-none border-0 bg-transparent p-0 text-left text-inherit [font:inherit]",
-        interactive ? "cursor-pointer" : "cursor-default",
-        classes.button,
-      )}
-      disabled={disabled || !interactive}
-      type="button"
-      {...buttonProps}
-    >
-      <span
-        aria-hidden="true"
+    return (
+      <button
+        ref={ref}
+        aria-label={label}
         className={cx(
-          paperItemSurface,
-          "pointer-events-none col-start-1 row-start-1 self-center justify-self-center",
-          classes.background,
+          interactive && animations.actionButton,
+          "relative grid shrink-0 grid-cols-1 grid-rows-1 appearance-none border-0 bg-transparent p-0 text-left text-inherit [font:inherit]",
+          interactive ? "cursor-pointer" : "cursor-default",
+          classes.button,
         )}
-      />
-      {children}
-    </button>
-  );
+        disabled={disabled || !interactive}
+        type="button"
+        {...buttonProps}
+      >
+        <span
+          aria-hidden="true"
+          className={cx(
+            paperItemSurface,
+            "pointer-events-none col-start-1 row-start-1 self-center justify-self-center",
+            classes.background,
+          )}
+        />
+        {children}
+      </button>
+    );
   },
 );
 

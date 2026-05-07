@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Drawer } from "vaul";
+
+import { useState } from "react";
 
 import { BorderedIconButton } from "./bordered-icon-button";
 import { Sidebar } from "./sidebar";

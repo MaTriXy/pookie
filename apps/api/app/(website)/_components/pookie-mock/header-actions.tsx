@@ -30,7 +30,7 @@ export const HeaderActions = ({ children }: { children?: ReactNode }) => (
             className={cx(
               animations.notificationBadge,
               "pointer-events-none absolute top-2 right-2",
-          )}
+            )}
           >
             <span
               className={cx(

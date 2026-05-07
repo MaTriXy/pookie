@@ -65,10 +65,7 @@ const ChannelRow = ({
   const isExternal = href?.startsWith("http");
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimateSubItems = animateSubItems && !prefersReducedMotion;
-  const rowClassName = cx(
-    CHANNEL_ROW_BASE,
-    fullWidth ? "w-full" : "w-[188px]",
-  );
+  const rowClassName = cx(CHANNEL_ROW_BASE, fullWidth ? "w-full" : "w-[188px]");
   const rowStackClassName = "flex flex-col gap-[5px]";
 
   const content = (
@@ -284,9 +281,7 @@ export const Sidebar = ({
             <ChannelRow
               key={channel}
               label={channel}
-              active={
-                isDrawerDocsActive ? isStaticDrawerDocs : isActiveChannel
-              }
+              active={isDrawerDocsActive ? isStaticDrawerDocs : isActiveChannel}
               subItems={
                 channel === "docs" && isStaticDrawerDocs
                   ? isDrawerDocsExpanded

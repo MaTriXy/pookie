@@ -24,7 +24,7 @@ const RootLayout = ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => (
-  <html lang="en" className={`${lato.variable} h-full antialiased font-sans`}>
+  <html lang="en" className={`${lato.variable} h-full font-sans antialiased`}>
     <head>
       {process.env.NODE_ENV === "development" && (
         <Script

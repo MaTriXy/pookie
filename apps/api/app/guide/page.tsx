@@ -44,9 +44,7 @@ const SectionHeading = ({
 );
 
 const BodyText = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-base leading-6 font-medium text-[#4d4d4d]">
-    {children}
-  </p>
+  <p className="text-base leading-6 font-medium text-[#4d4d4d]">{children}</p>
 );
 
 const CodeBlock = ({ children }: { children: React.ReactNode }) => (

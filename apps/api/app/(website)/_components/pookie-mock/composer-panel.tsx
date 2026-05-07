@@ -37,13 +37,7 @@ import {
   type LexicalEditor,
 } from "lexical";
 
-import {
-  type Ref,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 
 import { composerShadow, cx } from "./styles";
 
@@ -470,10 +464,7 @@ const ComposerInner = () => {
           }
         />
       </div>
-      <BottomToolbar
-        canSend={canSend}
-        onSend={sendMessage}
-      />
+      <BottomToolbar canSend={canSend} onSend={sendMessage} />
       <HistoryPlugin />
       <ListPlugin />
       <LinkPlugin />

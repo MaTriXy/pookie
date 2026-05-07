@@ -27,9 +27,7 @@ export const PageSubheading = ({ children }: { children: ReactNode }) => (
 );
 
 export const PageText = ({ children }: { children: ReactNode }) => (
-  <p className="text-[14px] leading-[21px] text-[#666]">
-    {children}
-  </p>
+  <p className="text-[14px] leading-[21px] text-[#666]">{children}</p>
 );
 
 export const PagePanel = ({

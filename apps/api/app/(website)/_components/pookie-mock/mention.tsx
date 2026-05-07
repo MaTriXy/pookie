@@ -7,7 +7,12 @@ export const Mention = ({ name, href }: { name: string; href?: string }) => {
 
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="no-underline">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="no-underline"
+      >
         {content}
       </a>
     );
