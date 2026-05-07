@@ -11,7 +11,10 @@ import {
   normalizeToolError,
 } from "../utils/normalize-tool-error";
 import { recordSpanError } from "../utils/record-span-error";
-import { isValidSlackEmojiShortcode } from "../utils/slack-emoji-shortcode";
+import {
+  isValidSlackEmojiShortcode,
+  resolveSlackEmojiShortcode,
+} from "../utils/slack-emoji-shortcode";
 import { getISOFromSlackTimestamp } from "../utils/slack-timestamp";
 import { slackTracer } from "../utils/slack-tracer";
 import { truncateSnippet } from "../utils/truncate-snippet";
@@ -51,14 +54,14 @@ interface SlackChannelToolContext {
 const normalizeEmojiShortcode = (
   rawEmoji: string,
 ): PookieToolResult<string> => {
-  const stripped = rawEmoji.trim().replace(/^:|:$/g, "");
-  if (!isValidSlackEmojiShortcode(stripped)) {
+  const resolved = resolveSlackEmojiShortcode(rawEmoji);
+  if (!isValidSlackEmojiShortcode(resolved)) {
     return toolErr(
       "validation",
-      `'${rawEmoji}' is not a valid Slack emoji shortcode. Use lowercase letters, digits, underscores, '+' or '-' (e.g. ok, white_check_mark, +1).`,
+      `'${rawEmoji}' is not a recognized emoji. Pass either the unicode emoji character (e.g. 🚩, 👍, ❤️) or the canonical Slack shortcode (e.g. 'triangular_flag_on_post', '+1', 'heart').`,
     );
   }
-  return toolResult(stripped);
+  return toolResult(resolved);
 };
 
 interface SlackSession {
@@ -1240,7 +1243,7 @@ export const slackChannelTools = ({
 
   const slack_react_to_message = defineTool({
     description:
-      "Add an emoji reaction to a Slack message. Use for a quick acknowledgement, status signal, or playful response when a reaction is more apt than a reply (e.g. acknowledging a 'thanks', confirming an action completed, or just vibing with the user). To react to the user's current triggering message (the common case), OMIT `messageTs` entirely -- do not pass an empty string. Only pass `messageTs` when you have a specific other message's ts from another tool's output (e.g. slack_channel_history, slack_read_thread).",
+      "Add an emoji reaction to a Slack message. Use for a quick acknowledgement, status signal, or playful response when a reaction is more apt than a reply (e.g. acknowledging a 'thanks', confirming an action completed, or just vibing with the user). The emoji parameter accepts either the unicode emoji character (🚩, 👍, ❤️) or the Slack shortcode without colons ('triangular_flag_on_post', '+1', 'heart') -- pick whichever is more natural. To react to the user's current triggering message (the common case), OMIT `messageTs` entirely -- do not pass an empty string. Only pass `messageTs` when you have a specific other message's ts from another tool's output (e.g. slack_channel_history, slack_read_thread).",
     inputSchema: z.object({
       emoji: z
         .string()
@@ -1248,7 +1251,7 @@ export const slackChannelTools = ({
         .max(64)
         .optional()
         .describe(
-          `Slack emoji shortcode without colons. Use the canonical Slack name (e.g. 'ok', 'white_check_mark', 'eyes', 'sparkles', '+1', 'heart', 'fire', 'tada'). Common renames: red flag → 'triangular_flag_on_post', thumbs up → '+1' or 'thumbsup', check → 'white_check_mark', heart → 'heart'. Defaults to '${SLACK_REACT_DEFAULT_EMOJI}'.`,
+          `Pass either the unicode emoji character (e.g. 🚩, 👍, ❤️, 👌, 😺) or the Slack shortcode without colons (e.g. 'ok', 'white_check_mark', 'eyes', '+1', 'heart', 'tada'). Unicode characters auto-convert to the right shortcode, so just pick whichever is more natural. Defaults to '${SLACK_REACT_DEFAULT_EMOJI}'.`,
         ),
       messageTs: z
         .string()
@@ -1291,7 +1294,7 @@ export const slackChannelTools = ({
         if (platformCode === "invalid_name") {
           return toolErr(
             "validation",
-            `'${normalized.result}' is not a Slack-recognized emoji shortcode (Slack returned invalid_name). Retry with the canonical shortcode. Common gotchas: red flag → \`triangular_flag_on_post\`, thumbs up → \`+1\` (or \`thumbsup\`), thumbs down → \`-1\`, check → \`white_check_mark\` or \`heavy_check_mark\`, heart → \`heart\`, fire → \`fire\`, party → \`tada\`, smile → \`smile\` or \`smiley\`, ok → \`ok\` or \`ok_hand\`. Pick the closest match and call again.`,
+            `Slack rejected '${normalized.result}' as invalid_name (probably a workspace-custom emoji that doesn't exist here, or a misspelled shortcode). Retry with the unicode emoji character (e.g. 🚩, 👍, ❤️) or the canonical Slack shortcode (e.g. 'triangular_flag_on_post', '+1', 'heart').`,
             { code: "invalid_name" },
           );
         }
