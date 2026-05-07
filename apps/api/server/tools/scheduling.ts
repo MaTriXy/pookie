@@ -6,12 +6,13 @@ import { toolErr, toolResult } from "../agent/tool-result";
 import {
   cancelScheduledTask,
   isQueuesAvailable,
-  listScheduledTasks,
+  listScheduledTasksForUser,
   scheduleTask,
 } from "../scheduling";
 import {
   SCHEDULE_MAX_DELAY_SECONDS,
   SCHEDULE_MIN_DELAY_SECONDS,
+  SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS,
   SCHEDULE_PROMPT_MAX_CHARS,
 } from "../scheduling/constants";
 
@@ -49,7 +50,6 @@ const taskSummary = (record: ScheduledTaskRecord) => ({
   prompt: record.prompt,
   nextRunAt: new Date(record.nextRunAt).toISOString(),
   intervalSeconds: record.intervalSeconds,
-  recurring: record.intervalSeconds !== undefined,
   cancelled: record.cancelled,
   channelId: record.channelId,
 });
@@ -73,10 +73,10 @@ const scheduleInputSchema = z.object({
   intervalSeconds: z
     .number()
     .int()
-    .min(SCHEDULE_MIN_DELAY_SECONDS)
+    .min(SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS)
     .optional()
     .describe(
-      `Set ONLY for recurring tasks. Seconds between runs. Common values: 3600 (hourly), 86400 (daily), 604800 (weekly). Omit for one-shot reminders. Min ${SCHEDULE_MIN_DELAY_SECONDS}.`,
+      `Set ONLY for recurring tasks. Seconds between runs. Common values: 3600 (hourly), 86400 (daily), 604800 (weekly). Omit for one-shot reminders. Min ${SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS} (10 minutes).`,
     ),
 });
 
@@ -84,9 +84,7 @@ const scheduleResultSchema = z.object({
   taskId: z.string(),
   prompt: z.string(),
   scheduledFor: z.string(),
-  delaySeconds: z.number(),
   intervalSeconds: z.number().optional(),
-  recurring: z.boolean(),
 });
 
 const scheduleTaskTool = (context: SchedulingContext) =>
@@ -125,9 +123,7 @@ const scheduleTaskTool = (context: SchedulingContext) =>
         taskId: record.id,
         prompt: record.prompt,
         scheduledFor: new Date(record.nextRunAt).toISOString(),
-        delaySeconds,
         intervalSeconds,
-        recurring: intervalSeconds !== undefined,
       });
     },
     toModelOutput: (output) => {
@@ -145,7 +141,6 @@ const listScheduledResultSchema = z.object({
       prompt: z.string(),
       nextRunAt: z.string(),
       intervalSeconds: z.number().optional(),
-      recurring: z.boolean(),
       cancelled: z.boolean(),
       channelId: z.string(),
     }),
@@ -155,14 +150,23 @@ const listScheduledResultSchema = z.object({
 const listScheduledTasksTool = (context: SchedulingContext) =>
   defineTool({
     description: withAvailabilityNote(
-      "List Pookie's scheduled tasks for this workspace. Includes one-shot reminders and recurring tasks created via schedule_task. Returns task IDs the user can reference when asking to cancel one.",
+      "List the current user's scheduled tasks. Includes one-shot reminders and recurring tasks they created via schedule_task. Returns task IDs the user can reference when asking to cancel one. Tasks scheduled by other workspace members are NOT included — privacy boundary.",
     ),
     inputSchema: z.object({}),
     resultSchema: listScheduledResultSchema,
     errorFallback: "failed to list scheduled tasks",
     execute: async () => {
       if (!isQueuesAvailable()) return queuesUnavailableError();
-      const records = await listScheduledTasks(context.teamId);
+      if (!context.userId) {
+        return toolErr(
+          "validation",
+          "listing scheduled tasks requires a known Slack user",
+        );
+      }
+      const records = await listScheduledTasksForUser(
+        context.teamId,
+        context.userId,
+      );
       return toolResult({
         count: records.length,
         tasks: records.map(taskSummary),
@@ -197,19 +201,31 @@ const cancelResultSchema = z.object({
 const cancelScheduledTaskTool = (context: SchedulingContext) =>
   defineTool({
     description: withAvailabilityNote(
-      "Cancel a previously scheduled task by ID. Idempotent — calling twice returns cancelled: true both times. The next time the queue would have fired this task, it's silently dropped.",
+      "Cancel a previously scheduled task by ID. Idempotent — calling twice returns cancelled: true both times. The next time the queue would have fired this task, it's silently dropped. Only the user who scheduled the task can cancel it; attempting to cancel another user's task returns wrong_user.",
     ),
     inputSchema: cancelInputSchema,
     resultSchema: cancelResultSchema,
     errorFallback: "failed to cancel scheduled task",
     execute: async ({ taskId }) => {
       if (!isQueuesAvailable()) return queuesUnavailableError();
-      const result = await cancelScheduledTask(taskId, context.teamId);
+      if (!context.userId) {
+        return toolErr(
+          "validation",
+          "cancelling a scheduled task requires a known Slack user",
+        );
+      }
+      const result = await cancelScheduledTask(
+        taskId,
+        context.teamId,
+        context.userId,
+      );
       if (!result.ok) {
         const message =
           result.reason === "wrong_team"
             ? "that task ID belongs to a different workspace"
-            : `no scheduled task found with id ${taskId}`;
+            : result.reason === "wrong_user"
+              ? "that task was scheduled by another user — only the original scheduler can cancel it"
+              : `no scheduled task found with id ${taskId}`;
         return toolErr("validation", message, { code: result.reason });
       }
       return toolResult({

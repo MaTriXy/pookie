@@ -18,7 +18,17 @@ export const scheduleDedupKey = (messageId: string): string =>
 
 export const SCHEDULE_MIN_DELAY_SECONDS = 60;
 export const SCHEDULE_MAX_DELAY_SECONDS = 7 * 24 * 60 * 60;
+// Recurring tasks have a higher floor than one-shot reminders. A 60-second
+// recurring task would fire 60×/hour × 24 hours/day = 1440 agent runs/day,
+// each potentially calling out to OpenAI / web_search / MCP servers. The
+// 10-minute floor caps that at 144 runs/day, which is still aggressive but
+// not absurd. One-shot reminders keep the 60s floor for the "set a 5 min
+// timer" use case.
+export const SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS = 600;
 export const SCHEDULE_MAX_PER_TEAM = 50;
+// Per-user cap prevents a single workspace member from filling all 50 team
+// slots and silently consuming compute on behalf of others.
+export const SCHEDULE_MAX_PER_USER = 10;
 export const SCHEDULE_RECORD_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 // 24h is comfortably longer than Vercel's max visibility timeout (1h) and

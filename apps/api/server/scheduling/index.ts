@@ -3,12 +3,15 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { logger } from "../utils/logger";
+import { redactError } from "../utils/redact-error";
 import { getQueueSend, isQueuesAvailable } from "./capability";
 import {
   SCHEDULED_TASK_TOPIC,
   SCHEDULE_MAX_DELAY_SECONDS,
   SCHEDULE_MAX_PER_TEAM,
+  SCHEDULE_MAX_PER_USER,
   SCHEDULE_MIN_DELAY_SECONDS,
+  SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS,
   SCHEDULE_PROMPT_MAX_CHARS,
 } from "./constants";
 import {
@@ -33,7 +36,7 @@ export const scheduledTaskMessageSchema = z.object({
 
 export type ScheduledTaskMessage = z.infer<typeof scheduledTaskMessageSchema>;
 
-export interface ScheduleTaskInput {
+interface ScheduleTaskInput {
   teamId: string;
   channelId: string;
   threadId: string;
@@ -44,13 +47,14 @@ export interface ScheduleTaskInput {
   intervalSeconds?: number;
 }
 
-export type ScheduleFailureReason =
+type ScheduleFailureReason =
   | "queues_unavailable"
   | "validation"
   | "limit_reached"
+  | "user_limit_reached"
   | "send_failed";
 
-export type ScheduleTaskResult =
+type ScheduleTaskResult =
   | { ok: true; record: ScheduledTaskRecord }
   | { ok: false; reason: ScheduleFailureReason; message: string };
 
@@ -80,9 +84,9 @@ const validateInput = (input: ScheduleTaskInput): string | null => {
   if (
     input.intervalSeconds !== undefined &&
     (!Number.isFinite(input.intervalSeconds) ||
-      input.intervalSeconds < SCHEDULE_MIN_DELAY_SECONDS)
+      input.intervalSeconds < SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS)
   ) {
-    return `intervalSeconds must be at least ${SCHEDULE_MIN_DELAY_SECONDS} (1 minute)`;
+    return `intervalSeconds must be at least ${SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS} (10 minutes) for recurring tasks`;
   }
   return null;
 };
@@ -128,7 +132,7 @@ export const publishScheduledTaskMessage = async (
         : String(publishError);
     logger.warn("[scheduling] failed to publish queue message", {
       taskId,
-      error: errorMessage,
+      error: redactError(errorMessage),
     });
     return { ok: false, error: errorMessage };
   }
@@ -145,11 +149,20 @@ export const scheduleTask = async (
   if (validationError) return fail("validation", validationError);
 
   const existing = await listScheduledTasksForTeam(input.teamId);
-  const activeCount = existing.filter((entry) => !entry.cancelled).length;
-  if (activeCount >= SCHEDULE_MAX_PER_TEAM) {
+  const activeTasks = existing.filter((entry) => !entry.cancelled);
+  if (activeTasks.length >= SCHEDULE_MAX_PER_TEAM) {
     return fail(
       "limit_reached",
-      `this workspace already has ${activeCount} active scheduled tasks (max ${SCHEDULE_MAX_PER_TEAM}). Cancel one before scheduling another.`,
+      `this workspace already has ${activeTasks.length} active scheduled tasks (max ${SCHEDULE_MAX_PER_TEAM}). Cancel one before scheduling another.`,
+    );
+  }
+  const userActiveCount = activeTasks.filter(
+    (entry) => entry.createdByUserId === input.createdByUserId,
+  ).length;
+  if (userActiveCount >= SCHEDULE_MAX_PER_USER) {
+    return fail(
+      "user_limit_reached",
+      `you already have ${userActiveCount} active scheduled tasks (max ${SCHEDULE_MAX_PER_USER} per user). Cancel one of yours before scheduling another.`,
     );
   }
 
@@ -186,10 +199,11 @@ export const scheduleTask = async (
     } catch (cleanupError) {
       logger.warn("[scheduling] cleanup after send failure also failed", {
         taskId: record.id,
-        error:
+        error: redactError(
           cleanupError instanceof Error
             ? cleanupError.message
             : String(cleanupError),
+        ),
       });
     }
     return fail("send_failed", sendResult.error);
@@ -201,17 +215,33 @@ export const scheduleTask = async (
 export const cancelScheduledTask = async (
   taskId: string,
   teamId: string,
+  callerUserId: string,
 ): Promise<
   | { ok: true; record: ScheduledTaskRecord }
-  | { ok: false; reason: "not_found" | "wrong_team" }
+  | { ok: false; reason: "not_found" | "wrong_team" | "wrong_user" }
 > => {
   const existing = await loadScheduledTask(taskId);
   if (!existing) return { ok: false, reason: "not_found" };
   if (existing.teamId !== teamId) return { ok: false, reason: "wrong_team" };
+  // Authorization: only the user who scheduled the task can cancel it.
+  // Workspace admins are not given an override here — keeping the
+  // authority model simple and consistent. A later /pookie-config flow
+  // can expose admin cancellation if it becomes necessary.
+  if (existing.createdByUserId !== callerUserId) {
+    return { ok: false, reason: "wrong_user" };
+  }
   const cancelled = await markScheduledTaskCancelled(taskId);
   if (!cancelled) return { ok: false, reason: "not_found" };
   return { ok: true, record: cancelled };
 };
 
-export { isQueuesAvailable, listScheduledTasksForTeam as listScheduledTasks };
+export const listScheduledTasksForUser = async (
+  teamId: string,
+  userId: string,
+): Promise<ScheduledTaskRecord[]> => {
+  const teamTasks = await listScheduledTasksForTeam(teamId);
+  return teamTasks.filter((entry) => entry.createdByUserId === userId);
+};
+
+export { isQueuesAvailable };
 export type { ScheduledTaskRecord };

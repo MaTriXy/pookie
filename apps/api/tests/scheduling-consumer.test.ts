@@ -333,4 +333,46 @@ describe("processScheduledTaskMessage", () => {
       expect(result.status).toBe("ran");
     });
   });
+
+  describe("post body sanitization (P1-1)", () => {
+    it("strips broadcast directives from the visible post and includes scheduler attribution", async () => {
+      mocks.loadScheduledTask.mockResolvedValue({
+        ...baseRecord,
+        prompt: "<!channel> ship the digest",
+      });
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast",
+      });
+
+      expect(mocks.threadPost).toHaveBeenCalledTimes(1);
+      const postArg = mocks.threadPost.mock.calls[0]![0] as {
+        markdown: string;
+      };
+      expect(postArg.markdown).not.toMatch(/<!channel>/);
+      expect(postArg.markdown).toMatch(/@channel/);
+      expect(postArg.markdown).toContain(`<@${baseRecord.createdByUserId}>`);
+    });
+
+    it("preserves the un-stripped prompt in the synthetic message passed to the agent", async () => {
+      mocks.loadScheduledTask.mockResolvedValue({
+        ...baseRecord,
+        prompt: "<!channel> ship the digest",
+      });
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast-agent",
+      });
+
+      expect(mocks.handleSlackMessage).toHaveBeenCalledTimes(1);
+      const messageArg = mocks.handleSlackMessage.mock.calls[0]![1] as {
+        data: { text: string };
+      };
+      // Agent sees the original directive so it can reason about it,
+      // but only the visible post is sanitized.
+      expect(messageArg.data.text).toContain("<!channel>");
+    });
+  });
 });

@@ -3,6 +3,8 @@ import { Message, ThreadImpl, parseMarkdown } from "chat";
 import { handleSlackMessage } from "../agent";
 import { slackBot } from "../slack-bot";
 import { logger } from "../utils/logger";
+import { redactError } from "../utils/redact-error";
+import { stripSlackBroadcasts } from "../utils/strip-slack-broadcasts";
 import { publishScheduledTaskMessage } from "./index";
 import {
   claimDedupSlot,
@@ -17,7 +19,7 @@ import type { SlackAdapter } from "@chat-adapter/slack";
 import type { ScheduledTaskMessage } from "./index";
 import type { ScheduledTaskRecord } from "./store";
 
-export interface ProcessScheduledTaskResult {
+interface ProcessScheduledTaskResult {
   status:
     | "ran"
     | "republished"
@@ -74,6 +76,25 @@ const buildSyntheticMessage = (
   });
 };
 
+// Strips `<!channel>`/`<!here>`/`<!everyone>`/`<!subteam^…>` from the prompt
+// before it's posted by the bot. Without this, a user could schedule a task
+// containing a broadcast directive and the bot would fire the notification
+// under its own permissions, laundering @channel-class privileges that the
+// scheduling user might not have. The agent still sees the un-stripped
+// prompt internally so it can act on the user's intent — only the visible
+// post is sanitized.
+//
+// We also prepend `_(scheduled by <@user>)_` so the actual originator of
+// the post is always visible in-thread, defusing identity laundering.
+const buildPostBody = (
+  record: ScheduledTaskRecord,
+  botUserId: string | undefined,
+): string => {
+  const safePrompt = stripSlackBroadcasts(record.prompt);
+  const mention = botUserId ? `<@${botUserId}> ` : "";
+  return `_(scheduled by <@${record.createdByUserId}>)_ ${mention}${safePrompt}`;
+};
+
 const runScheduledTaskInner = async (
   record: ScheduledTaskRecord,
 ): Promise<void> => {
@@ -91,15 +112,15 @@ const runScheduledTaskInner = async (
       logger.warn("[scheduling] failed to refresh thread", refreshError),
     );
 
-  // Slack mentions render as <@U123>, which the client displays as @pookie.
-  // Posting "<@bot> {prompt}" makes the scheduled fire look exactly like a
-  // user prompting Pookie in-thread, which is the whole point: the agent
-  // then responds in-thread off that prompt.
-  const promptMarkdown = slack.botUserId
+  // Visible post: sanitized prompt + scheduler attribution + bot mention.
+  // Synthetic message text seen by the agent: the original (un-stripped)
+  // prompt, so the agent can reason about and respond to the full intent.
+  const postBody = buildPostBody(record, slack.botUserId);
+  const promptForAgent = slack.botUserId
     ? `<@${slack.botUserId}> ${record.prompt}`
     : record.prompt;
   const postedMessage = await thread
-    .post({ markdown: promptMarkdown })
+    .post({ markdown: postBody })
     .catch((postError: unknown) => {
       logger.warn("[scheduling] failed to post self-prompt", postError);
       return undefined;
@@ -108,7 +129,7 @@ const runScheduledTaskInner = async (
 
   await handleSlackMessage(
     thread,
-    buildSyntheticMessage(record, postedTs, promptMarkdown),
+    buildSyntheticMessage(record, postedTs, promptForAgent),
   );
 };
 
@@ -123,18 +144,16 @@ const trackFailure = async (
   };
 };
 
-export interface ProcessScheduledTaskOptions {
-  message: ScheduledTaskMessage;
-  // Vercel-Queues messageId — the canonical at-least-once dedup key. Every
-  // accepted message gets a unique id; redeliveries of that message reuse
-  // the same id. The consumer route forwards `metadata.messageId` here.
-  messageId: string;
-}
-
+// `messageId` is the Vercel-Queues messageId — the canonical at-least-once
+// dedup key. Every accepted message gets a unique id; redeliveries of that
+// message reuse the same id. The consumer route forwards `metadata.messageId`.
 export const processScheduledTaskMessage = async ({
   message,
   messageId,
-}: ProcessScheduledTaskOptions): Promise<ProcessScheduledTaskResult> => {
+}: {
+  message: ScheduledTaskMessage;
+  messageId: string;
+}): Promise<ProcessScheduledTaskResult> => {
   const isFirstDelivery = await claimDedupSlot(messageId);
   if (!isFirstDelivery) {
     logger.info("[scheduling] redelivery suppressed", {
@@ -173,7 +192,9 @@ export const processScheduledTaskMessage = async ({
       runError instanceof Error ? runError.message : String(runError);
     logger.error("[scheduling] task run failed", {
       taskId: record.id,
-      error: errorMessage,
+      // Same redaction as recordScheduledTaskFailure performs at rest —
+      // logs ship to Axiom/Vercel and shouldn't carry token-shaped strings.
+      error: redactError(errorMessage),
     });
     return trackFailure(record, errorMessage);
   }

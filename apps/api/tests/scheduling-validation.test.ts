@@ -22,7 +22,11 @@ vi.mock("@vercel/queue", () => ({
 }));
 
 import { scheduleTask } from "../server/scheduling";
-import { SCHEDULE_PROMPT_MAX_CHARS } from "../server/scheduling/constants";
+import {
+  SCHEDULE_MAX_PER_TEAM,
+  SCHEDULE_MAX_PER_USER,
+  SCHEDULE_PROMPT_MAX_CHARS,
+} from "../server/scheduling/constants";
 
 const validInput = {
   teamId: "T0001",
@@ -72,18 +76,44 @@ describe("scheduleTask validation (M6)", () => {
     expect(result).toMatchObject({ ok: false, reason: "validation" });
   });
 
-  it("rejects an interval below the minimum", async () => {
+  it("rejects a recurring interval below the recurring minimum", async () => {
+    // 60s would have been valid for one-shot (delaySeconds floor), but
+    // recurring tasks have a higher 10-minute floor to bound runaway cost.
     const result = await scheduleTask({
       ...validInput,
-      intervalSeconds: 30,
+      intervalSeconds: 60,
     });
     expect(result).toMatchObject({ ok: false, reason: "validation" });
   });
 
   it("rejects when the per-team limit is already reached", async () => {
     mocks.listScheduledTasksForTeam.mockResolvedValue(
-      Array.from({ length: 50 }, (_unused, scheduleIndex) => ({
-        id: `task-${scheduleIndex}`,
+      Array.from({ length: SCHEDULE_MAX_PER_TEAM }, (_unused, recordIndex) => ({
+        id: `task-${recordIndex}`,
+        teamId: validInput.teamId,
+        channelId: validInput.channelId,
+        threadId: validInput.threadId,
+        isDM: false,
+        // Spread across distinct users so the per-user cap doesn't
+        // short-circuit before the per-team cap kicks in.
+        createdByUserId: `OTHER_USER_${recordIndex}`,
+        prompt: "x",
+        nextRunAt: Date.now(),
+        createdAt: Date.now(),
+        cancelled: false,
+        failureCount: 0,
+      })),
+    );
+
+    const result = await scheduleTask(validInput);
+    expect(result).toMatchObject({ ok: false, reason: "limit_reached" });
+    expect(mocks.saveScheduledTask).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the per-user limit is already reached (P2-2)", async () => {
+    mocks.listScheduledTasksForTeam.mockResolvedValue(
+      Array.from({ length: SCHEDULE_MAX_PER_USER }, (_unused, recordIndex) => ({
+        id: `task-${recordIndex}`,
         teamId: validInput.teamId,
         channelId: validInput.channelId,
         threadId: validInput.threadId,
@@ -98,14 +128,14 @@ describe("scheduleTask validation (M6)", () => {
     );
 
     const result = await scheduleTask(validInput);
-    expect(result).toMatchObject({ ok: false, reason: "limit_reached" });
+    expect(result).toMatchObject({ ok: false, reason: "user_limit_reached" });
     expect(mocks.saveScheduledTask).not.toHaveBeenCalled();
   });
 
   it("does not count cancelled tasks against the limit", async () => {
     mocks.listScheduledTasksForTeam.mockResolvedValue(
-      Array.from({ length: 50 }, (_unused, scheduleIndex) => ({
-        id: `task-${scheduleIndex}`,
+      Array.from({ length: SCHEDULE_MAX_PER_TEAM }, (_unused, recordIndex) => ({
+        id: `task-${recordIndex}`,
         teamId: validInput.teamId,
         channelId: validInput.channelId,
         threadId: validInput.threadId,

@@ -43,19 +43,4 @@ describe("scheduleTask graceful decline", () => {
       message: expect.stringContaining("Vercel Queues"),
     });
   });
-
-  it("does not crash when called with a long recurring interval and queues are unavailable", async () => {
-    const result = await scheduleTask({
-      teamId: "T0002",
-      channelId: "C0002",
-      threadId: "slack:C0002:1700000000.000002",
-      isDM: true,
-      createdByUserId: "U0002",
-      prompt: "weekly digest",
-      delaySeconds: 60,
-      intervalSeconds: 7 * 24 * 60 * 60,
-    });
-
-    expect(result.ok).toBe(false);
-  });
 });

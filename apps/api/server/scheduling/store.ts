@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { redis } from "../mcp/redis";
+import { redactError } from "../utils/redact-error";
 import { decryptJson, encryptJson } from "../utils/secure-store";
 import {
   SCHEDULE_DEDUP_TTL_SECONDS,
@@ -143,14 +144,14 @@ export const recordScheduledTaskFailure = async (
     await deleteScheduledTask(record);
     return { shouldRetire: true };
   }
-  // Only the error class + message are surfaced from `errorMessage`, but a
-  // future failure mode could embed a token or PII into the string. Truncate
-  // hard, and store as part of the encrypted record so it can't leak via a
-  // raw Redis dump.
+  // The encrypted record protects `lastError` from raw-Redis-dump leakage,
+  // but the error string still flows through logs and debug surfaces.
+  // Redact secret-shaped substrings (long opaque tokens, base64 ids,
+  // partial JWTs) before persisting — see redactError.
   await writeRecord({
     ...record,
     failureCount,
-    lastError: errorMessage.slice(0, 500),
+    lastError: redactError(errorMessage),
   });
   return { shouldRetire: false };
 };
