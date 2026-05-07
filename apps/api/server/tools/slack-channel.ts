@@ -1239,7 +1239,7 @@ export const slackChannelTools = ({
 
   const slack_react_to_message = defineTool({
     description:
-      "Add an emoji reaction to a Slack message. Use for a quick acknowledgement, status signal, or playful response when a reaction is more apt than a reply (e.g. acknowledging a 'thanks', confirming an action completed, or just vibing with the user). Defaults to reacting to the user's current triggering message with :ok:. Pass `messageTs` to react to a specific message you've already retrieved (e.g. from slack_channel_history or slack_read_thread).",
+      "Add an emoji reaction to a Slack message. Use for a quick acknowledgement, status signal, or playful response when a reaction is more apt than a reply (e.g. acknowledging a 'thanks', confirming an action completed, or just vibing with the user). To react to the user's current triggering message (the common case), OMIT `messageTs` entirely -- do not pass an empty string. Only pass `messageTs` when you have a specific other message's ts from another tool's output (e.g. slack_channel_history, slack_read_thread).",
     inputSchema: z.object({
       emoji: z
         .string()
@@ -1251,19 +1251,26 @@ export const slackChannelTools = ({
         ),
       messageTs: z
         .string()
+        .min(1)
         .optional()
         .describe(
-          "Slack message ts string like 1712345678.000100. Defaults to the user's current message that triggered this turn.",
+          "Slack message ts string like 1712345678.000100. OMIT this entirely to react to the user's current triggering message -- never pass an empty string. Only set it when reacting to a specific other message whose ts came from another tool.",
         ),
     }),
     resultSchema: reactionResultSchema,
     errorFallback: "failed to react to message",
     execute: async ({ emoji, messageTs }) => {
-      const targetTs = messageTs ?? currentMessage?.id;
+      // Belt-and-suspenders: schema enforces `min(1)` on `messageTs`, but
+      // trim here too so a whitespace-only string from the model still
+      // falls through to the currentMessage default rather than being sent
+      // to Slack as a literal " ".
+      const explicitTs = messageTs?.trim();
+      const targetTs =
+        explicitTs && explicitTs.length > 0 ? explicitTs : currentMessage?.id;
       if (!targetTs) {
         return toolErr(
           "validation",
-          "no message timestamp available to react to. provide messageTs explicitly when there isn't a triggering user message in context.",
+          "no message timestamp available to react to. there's no current Slack message in context, so pass `messageTs` explicitly (e.g. from slack_read_thread output) or ask the user for the message permalink.",
         );
       }
 
