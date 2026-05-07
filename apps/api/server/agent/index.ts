@@ -59,6 +59,7 @@ import type { McpToolsResult } from "../mcp/client";
 import type { CardStreamSegment } from "./parse-card-stream";
 import type { AgentCard } from "./response-schema";
 import type { McpServerSummary } from "./system-reminder";
+import type { UwuTriggerCandidate } from "./uwu-mode";
 
 const GENERIC_ERROR_MARKDOWN =
   "sorry, something broke on my end before i could finish replying. give it another try in a minute — if it keeps happening, email founders@million.dev with the channel name and roughly when this happened.";
@@ -228,6 +229,7 @@ const runAgentRound = async (options: {
     currentMessage?.text,
     ...(followUpMessages ?? []),
   ]);
+  if (uwuMode) stampSpanAttribute("pookiebot.uwu_mode", true);
   const reminderBody = buildSystemReminder({
     followUpMessages,
     mcpServers,
@@ -433,17 +435,29 @@ export const handleSlackMessage = async (
     // is unreliable in practice -- it skips the call when it's already
     // generating a chatty pet-mode reply. Best-effort, fire-and-forget;
     // a duplicate `already_reacted` from Slack here is harmless.
-    const petTriggerMessage = findUwuTriggerMessage([
-      currentMessage,
-      ...(skippedMessages ?? []),
-    ]);
-    if (petTriggerMessage) {
+    //
+    // Bookkeeping lives at the turn scope so we cover three cases with one
+    // boolean: trigger in the original message, trigger in a Slack-coalesced
+    // skipped message, OR trigger arriving as a Redis-drained follow-up
+    // mid-turn (round 2+). We auto-react at most once per turn -- if the
+    // user types `uwu` and then `meow`, one cat emoji is enough.
+    let petAutoReacted = false;
+    const tryPetAutoReact = (
+      candidates: ReadonlyArray<UwuTriggerCandidate | undefined>,
+    ): void => {
+      if (petAutoReacted) return;
+      const triggerMessage = findUwuTriggerMessage(candidates);
+      if (!triggerMessage) return;
+      petAutoReacted = true;
+      stampSpanAttribute("pookiebot.uwu_mode", true);
+      stampSpanAttribute("pookiebot.uwu_trigger_message_id", triggerMessage.id);
       void slack
-        .addReaction(thread.id, petTriggerMessage.id, pickRandomCatEmoji())
+        .addReaction(thread.id, triggerMessage.id, pickRandomCatEmoji())
         .catch((reactionError: unknown) =>
           logger.warn("[agent] pet-mode auto-react failed:", reactionError),
         );
-    }
+    };
+    tryPetAutoReact([currentMessage, ...(skippedMessages ?? [])]);
 
     const traceId = isTracingEnabled ? getCurrentTraceId() : undefined;
     if (isTracingEnabled) {
@@ -595,7 +609,17 @@ export const handleSlackMessage = async (
         logger.info(
           `[agent] drained ${drained.length} follow-up(s), starting round ${round + 2}`,
         );
-        followUpMessages = drained;
+        // Each drained follow-up is a real Slack message with its own ts;
+        // route them through the same auto-react gate as round 0 input so
+        // a uwu/owo/meow that arrives mid-turn still gets its cat reaction
+        // ON the message that actually contained the trigger.
+        tryPetAutoReact(
+          drained.map((followUp) => ({
+            id: followUp.messageId,
+            text: followUp.text,
+          })),
+        );
+        followUpMessages = drained.map((followUp) => followUp.text);
       }
 
       if (

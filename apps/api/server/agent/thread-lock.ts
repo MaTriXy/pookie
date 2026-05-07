@@ -126,20 +126,23 @@ export const tryMarkReauthNoticeSent = async (
 
 // Uses LTRIM instead of DEL so a message RPUSHed between the LRANGE
 // and the trim is preserved rather than silently dropped.
+//
+// Returns the full QueuedFollowUp records (text + messageId) so callers
+// that need the originating Slack message -- e.g. the pet-mode auto-react
+// that has to react ON the trigger message -- have it without an extra
+// round-trip. Callers that only want text can `.map((f) => f.text)`.
 export const drainFollowUps = async (
   kv: Redis,
   threadId: string,
-): Promise<string[]> => {
+): Promise<QueuedFollowUp[]> => {
   const key = queueKey(threadId);
   const items = await kv.lrange(key, 0, -1);
   if (items.length > 0) await kv.ltrim(key, items.length, -1);
 
   return items
-    .map((rawItem) => {
-      const parsed = parseFollowUp(rawItem);
-      return parsed?.text;
-    })
+    .map((rawItem) => parseFollowUp(rawItem))
     .filter(
-      (text): text is string => typeof text === "string" && text.length > 0,
+      (followUp): followUp is QueuedFollowUp =>
+        followUp !== null && followUp.text.length > 0,
     );
 };

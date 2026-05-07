@@ -171,7 +171,7 @@ describe("enqueueFollowUp", () => {
 });
 
 describe("drainFollowUps", () => {
-  it("returns all queued message texts and clears them", async () => {
+  it("returns full queued follow-ups (id + text) in order and clears them", async () => {
     const kv = createFakeRedis();
     await enqueueFollowUp(kv, "thread-1", "C123", {
       messageId: "a",
@@ -187,7 +187,11 @@ describe("drainFollowUps", () => {
     });
 
     const drained = await drainFollowUps(kv, "thread-1");
-    expect(drained).toEqual(["text-a", "text-b", "text-c"]);
+    expect(drained).toEqual([
+      { messageId: "a", text: "text-a" },
+      { messageId: "b", text: "text-b" },
+      { messageId: "c", text: "text-c" },
+    ]);
 
     const second = await drainFollowUps(kv, "thread-1");
     expect(second).toEqual([]);
@@ -217,7 +221,7 @@ describe("drainFollowUps", () => {
     );
 
     const drained = await drainFollowUps(kv, "thread-1");
-    expect(drained).toEqual(["first-text"]);
+    expect(drained).toEqual([{ messageId: "first", text: "first-text" }]);
 
     const remaining = kv._lists.get("pookie:followups:thread-1") ?? [];
     expect(remaining.length).toBeGreaterThan(0);
@@ -239,7 +243,7 @@ describe("removeDeletedFollowUp", () => {
     await removeDeletedFollowUp(kv, "C123", "msg-to-delete");
 
     const drained = await drainFollowUps(kv, "thread-1");
-    expect(drained).toEqual(["should stay"]);
+    expect(drained).toEqual([{ messageId: "msg-keep", text: "should stay" }]);
   });
 
   it("is a no-op when the message was not enqueued", async () => {
@@ -252,7 +256,7 @@ describe("removeDeletedFollowUp", () => {
     await removeDeletedFollowUp(kv, "C123", "msg-unknown");
 
     const drained = await drainFollowUps(kv, "thread-1");
-    expect(drained).toEqual(["stays"]);
+    expect(drained).toEqual([{ messageId: "msg-1", text: "stays" }]);
   });
 
   it("cleans up the reverse-mapping ref key", async () => {

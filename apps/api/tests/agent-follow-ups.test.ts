@@ -262,7 +262,9 @@ describe("handleSlackMessage follow-up queue", () => {
   });
 
   it("runs a second round when follow-ups are drained", async () => {
-    mocks.drainFollowUps.mockResolvedValueOnce(["also do Y"]);
+    mocks.drainFollowUps.mockResolvedValueOnce([
+      { messageId: "ts-Y", text: "also do Y" },
+    ]);
 
     const thread = createThread();
     await handleSlackMessage(thread, createMessage());
@@ -273,7 +275,9 @@ describe("handleSlackMessage follow-up queue", () => {
   });
 
   it("stops after MAX_FOLLOW_UP_ROUNDS even if more follow-ups arrive", async () => {
-    mocks.drainFollowUps.mockResolvedValue(["more"]);
+    mocks.drainFollowUps.mockResolvedValue([
+      { messageId: "ts-more", text: "more" },
+    ]);
 
     const thread = createThread();
     await handleSlackMessage(thread, createMessage());
@@ -336,7 +340,9 @@ describe("handleSlackMessage follow-up queue", () => {
     // guarantees the second round replaces (not stacks) round 1's reminder.
     // Without idempotency, round 2 would emit two `<system-reminder>` blocks
     // on the same message and bloat context every round.
-    mocks.drainFollowUps.mockResolvedValueOnce(["follow up text"]);
+    mocks.drainFollowUps.mockResolvedValueOnce([
+      { messageId: "ts-follow", text: "follow up text" },
+    ]);
     mocks.toAiMessages.mockResolvedValue([
       { role: "user", content: "hello pookie" },
     ]);

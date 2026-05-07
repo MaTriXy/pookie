@@ -1298,10 +1298,13 @@ export const slackChannelTools = ({
             { code: "invalid_name" },
           );
         }
-        // Same emoji already on the message (likely from the deterministic
-        // pet-mode auto-react beating the model's tool call to it). The
-        // user-facing outcome is identical to a fresh add, so report
-        // success rather than surfacing the duplicate-write error.
+        // Slack returns `already_reacted` only when the EXACT same shortcode
+        // (under emoji aliasing) is already on the message from this bot.
+        // So if we hit this branch, `normalized.result` is genuinely already
+        // present on the message -- typically because the deterministic
+        // pet-mode auto-react picked the same cat shortcode the model then
+        // tried to add. Report success since the user-facing outcome
+        // ("react with X is on the message") is identical to a fresh add.
         if (platformCode === "already_reacted") {
           return toolResult({
             emoji: normalized.result,

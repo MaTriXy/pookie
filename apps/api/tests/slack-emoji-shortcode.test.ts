@@ -14,6 +14,22 @@ describe("resolveSlackEmojiShortcode", () => {
     expect(resolveSlackEmojiShortcode("😺")).toBe("smiley_cat");
   });
 
+  it("resolves bare cat emojis to their canonical Slack shortcodes", () => {
+    expect(resolveSlackEmojiShortcode("🐱")).toBe("cat");
+    expect(resolveSlackEmojiShortcode("🐈")).toBe("cat2");
+  });
+
+  it("strips skin-tone modifiers and resolves to the base shortcode", () => {
+    // Slack reactions don't carry user-selected skin tones the way the
+    // typing UI does, so collapsing 👍🏻 → +1 is the right shape.
+    expect(resolveSlackEmojiShortcode("👍🏻")).toBe("+1");
+    expect(resolveSlackEmojiShortcode("👍🏿")).toBe("+1");
+  });
+
+  it("resolves the bare-codepoint heart without its variation selector", () => {
+    expect(resolveSlackEmojiShortcode("\u2764")).toBe("heart");
+  });
+
   it("strips surrounding colons from shortcode input", () => {
     expect(resolveSlackEmojiShortcode(":cat:")).toBe("cat");
     expect(resolveSlackEmojiShortcode(":+1:")).toBe("+1");

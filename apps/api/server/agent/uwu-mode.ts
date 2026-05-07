@@ -26,6 +26,10 @@ export const detectUwuTrigger = (
 
 // Returns the first message whose text triggers pet mode, so callers can
 // react on that exact message (the user's actual "uwu") rather than guessing.
+//
+// Filters out candidates with empty `id` even if their text triggers --
+// reacting to a Slack message ts of "" hits a 400 from `reactions.add`,
+// which is harmless (caller is fire-and-forget) but pollutes logs.
 export const findUwuTriggerMessage = <
   Candidate extends UwuTriggerCandidate | undefined,
 >(
@@ -34,6 +38,7 @@ export const findUwuTriggerMessage = <
   candidates.find(
     (candidate): candidate is Exclude<Candidate, undefined> =>
       candidate !== undefined &&
+      candidate.id.length > 0 &&
       candidate.text !== undefined &&
       UWU_TRIGGER_PATTERN.test(candidate.text),
   );
