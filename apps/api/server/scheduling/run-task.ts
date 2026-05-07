@@ -5,6 +5,7 @@ import { slackBot } from "../slack-bot";
 import { logger } from "../utils/logger";
 import { redactError } from "../utils/redact-error";
 import { stripSlackBroadcasts } from "../utils/strip-slack-broadcasts";
+import { nextFireMs } from "./cron";
 import { publishScheduledTaskMessage } from "./index";
 import {
   claimDedupSlot,
@@ -34,7 +35,7 @@ interface ProcessScheduledTaskResult {
 // Authority contract for the synthetic Message:
 //
 //   raw.user / author.userId is set to the SCHEDULING user (the person who
-//   originally called schedule_task), NOT the actively-acting user — there
+//   originally called cron_create), NOT the actively-acting user — there
 //   is no actively-acting user, the queue invoked us. handleSlackMessage
 //   uses these values to resolve memory scope (`current_user_id`) and the
 //   runtime context block, which is the right behavior: scheduled runs
@@ -224,10 +225,34 @@ export const processScheduledTaskMessage = async ({
     return trackFailure(record, errorMessage);
   }
 
-  const intervalSeconds = record.intervalSeconds;
-  if (intervalSeconds === undefined) {
+  if (!record.recurring) {
     await deleteScheduledTask(record);
     return { status: "ran", taskId: record.id };
+  }
+
+  // Anchor the next fire to the previous fire's nextRunAt, not Date.now().
+  // The agent run may have taken seconds to minutes; without anchoring,
+  // each fire's clock-time would drift forward by that amount and a
+  // 9:00am daily task would creep to 9:01, 9:02, etc. Computing from
+  // record.nextRunAt against the cron expression gives us the next valid
+  // slot in the schedule itself (e.g., the next 9am occurrence in
+  // userTimezone) regardless of how long this fire took.
+  let nextOccurrenceMs: number;
+  try {
+    nextOccurrenceMs = nextFireMs(
+      record.cronExpression,
+      record.userTimezone,
+      record.nextRunAt,
+    );
+  } catch (cronError) {
+    const errorMessage =
+      cronError instanceof Error ? cronError.message : String(cronError);
+    logger.error("[scheduling] failed to compute next cron fire", {
+      taskId: record.id,
+      cron: record.cronExpression,
+      error: errorMessage,
+    });
+    return trackFailure(record, errorMessage);
   }
 
   // Capture the post-run record (failureCount reset, nextRunAt + lastRunAt
@@ -236,11 +261,15 @@ export const processScheduledTaskMessage = async ({
   // failureCount and incorrectly approach the retire threshold.
   const updatedRecord = await updateScheduledTaskAfterRun(
     record,
-    Date.now() + intervalSeconds * 1000,
+    nextOccurrenceMs,
+  );
+  const delaySeconds = Math.max(
+    0,
+    Math.round((nextOccurrenceMs - Date.now()) / 1000),
   );
   const publishResult = await publishScheduledTaskMessage(
     updatedRecord.id,
-    intervalSeconds,
+    delaySeconds,
     updatedRecord.nextRunAt,
   );
   if (!publishResult.ok)

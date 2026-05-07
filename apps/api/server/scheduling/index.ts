@@ -10,10 +10,9 @@ import {
   SCHEDULE_MAX_DELAY_SECONDS,
   SCHEDULE_MAX_PER_TEAM,
   SCHEDULE_MAX_PER_USER,
-  SCHEDULE_MIN_DELAY_SECONDS,
-  SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS,
   SCHEDULE_PROMPT_MAX_CHARS,
 } from "./constants";
+import { validateCronExpression } from "./cron";
 import {
   deleteScheduledTask,
   listScheduledTasksForTeam,
@@ -43,8 +42,9 @@ interface ScheduleTaskInput {
   isDM: boolean;
   createdByUserId: string;
   prompt: string;
-  delaySeconds: number;
-  intervalSeconds?: number;
+  cronExpression: string;
+  recurring: boolean;
+  userTimezone: string;
 }
 
 type ScheduleFailureReason =
@@ -69,24 +69,11 @@ const fail = (
   message: string,
 ): ScheduleTaskResult => ({ ok: false, reason, message });
 
-const validateInput = (input: ScheduleTaskInput): string | null => {
-  const trimmedPrompt = input.prompt.trim();
-  if (!trimmedPrompt) return "prompt cannot be empty";
-  if (trimmedPrompt.length > SCHEDULE_PROMPT_MAX_CHARS) {
+const validatePromptShape = (prompt: string): string | null => {
+  const trimmed = prompt.trim();
+  if (!trimmed) return "prompt cannot be empty";
+  if (trimmed.length > SCHEDULE_PROMPT_MAX_CHARS) {
     return `prompt is too long (max ${SCHEDULE_PROMPT_MAX_CHARS} chars)`;
-  }
-  if (
-    !Number.isFinite(input.delaySeconds) ||
-    input.delaySeconds < SCHEDULE_MIN_DELAY_SECONDS
-  ) {
-    return `delaySeconds must be at least ${SCHEDULE_MIN_DELAY_SECONDS} (1 minute)`;
-  }
-  if (
-    input.intervalSeconds !== undefined &&
-    (!Number.isFinite(input.intervalSeconds) ||
-      input.intervalSeconds < SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS)
-  ) {
-    return `intervalSeconds must be at least ${SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS} (10 minutes) for recurring tasks`;
   }
   return null;
 };
@@ -110,7 +97,7 @@ export const publishScheduledTaskMessage = async (
   // ms-epoch of the occurrence this publish is for. Stable across consumer
   // retries of the same fire (so a flaky publish step doesn't fan out into
   // duplicate fires inside the queue's dedup window) but unique per
-  // recurring occurrence (so the next interval's publish doesn't collide
+  // recurring occurrence (so the next fire's publish doesn't collide
   // with the previous one and get silently dropped). For daisy-chain
   // republishes, callers pass the *original* fire time so all chunks of
   // one occurrence share the same key.
@@ -148,8 +135,17 @@ export const scheduleTask = async (
     return fail("queues_unavailable", QUEUES_UNAVAILABLE_MESSAGE);
   }
 
-  const validationError = validateInput(input);
-  if (validationError) return fail("validation", validationError);
+  const promptError = validatePromptShape(input.prompt);
+  if (promptError) return fail("validation", promptError);
+
+  const now = Date.now();
+  const cronValidation = validateCronExpression(
+    input.cronExpression,
+    input.userTimezone,
+    input.recurring,
+    now,
+  );
+  if (!cronValidation.ok) return fail("validation", cronValidation.message);
 
   const existing = await listScheduledTasksForTeam(input.teamId);
   const activeTasks = existing.filter((entry) => !entry.cancelled);
@@ -169,7 +165,6 @@ export const scheduleTask = async (
     );
   }
 
-  const now = Date.now();
   const record: ScheduledTaskRecord = {
     id: randomUUID(),
     teamId: input.teamId,
@@ -178,8 +173,10 @@ export const scheduleTask = async (
     isDM: input.isDM,
     createdByUserId: input.createdByUserId,
     prompt: input.prompt.trim(),
-    intervalSeconds: input.intervalSeconds,
-    nextRunAt: now + Math.round(input.delaySeconds * 1000),
+    cronExpression: input.cronExpression,
+    recurring: input.recurring,
+    userTimezone: input.userTimezone,
+    nextRunAt: cronValidation.firstFireMs,
     createdAt: now,
     cancelled: false,
     failureCount: 0,
@@ -187,9 +184,13 @@ export const scheduleTask = async (
 
   await saveScheduledTask(record);
 
+  const delaySeconds = Math.max(
+    0,
+    Math.round((cronValidation.firstFireMs - now) / 1000),
+  );
   const sendResult = await publishScheduledTaskMessage(
     record.id,
-    input.delaySeconds,
+    delaySeconds,
     record.nextRunAt,
   );
   if (!sendResult.ok) {
@@ -197,7 +198,7 @@ export const scheduleTask = async (
     // leak a "ghost" record that occupies a per-team slot but has no queue
     // message backing it. Surface the original send error to the caller
     // and log the cleanup failure so an operator can investigate; the
-    // scheduling user can still recover via `cancel_scheduled_task`.
+    // scheduling user can still recover via `cron_delete`.
     try {
       await deleteScheduledTask(record);
     } catch (cleanupError) {

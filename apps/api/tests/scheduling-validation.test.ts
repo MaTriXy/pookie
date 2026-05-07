@@ -39,10 +39,13 @@ const validInput = {
   isDM: false,
   createdByUserId: "U0001",
   prompt: "remind us to ship the digest",
-  delaySeconds: 600,
+  // 9am every weekday in Pacific time — well above the 10-min recurring floor.
+  cronExpression: "0 9 * * 1-5",
+  recurring: true,
+  userTimezone: "America/Los_Angeles",
 };
 
-describe("scheduleTask validation (M6)", () => {
+describe("scheduleTask validation", () => {
   let originalVercel: string | undefined;
 
   beforeEach(() => {
@@ -75,19 +78,34 @@ describe("scheduleTask validation (M6)", () => {
     expect(result).toMatchObject({ ok: false, reason: "validation" });
   });
 
-  it("rejects a delay below the minimum", async () => {
-    const result = await scheduleTask({ ...validInput, delaySeconds: 30 });
+  it("rejects a malformed cron expression", async () => {
+    const result = await scheduleTask({
+      ...validInput,
+      cronExpression: "not a cron",
+    });
     expect(result).toMatchObject({ ok: false, reason: "validation" });
   });
 
-  it("rejects a recurring interval below the recurring minimum", async () => {
-    // 60s would have been valid for one-shot (delaySeconds floor), but
-    // recurring tasks have a higher 10-minute floor to bound runaway cost.
+  it("rejects a recurring cron with sub-10-minute gaps", async () => {
+    // every minute = 60-second gap, well below the 10-minute recurring floor
     const result = await scheduleTask({
       ...validInput,
-      intervalSeconds: 60,
+      cronExpression: "* * * * *",
+      recurring: true,
     });
     expect(result).toMatchObject({ ok: false, reason: "validation" });
+    expect((result as { ok: false; message: string }).message).toMatch(
+      /recurring cron schedules/i,
+    );
+  });
+
+  it("accepts the same sub-10-minute cron when recurring is false (one-shot)", async () => {
+    const result = await scheduleTask({
+      ...validInput,
+      cronExpression: "* * * * *",
+      recurring: false,
+    });
+    expect(result.ok).toBe(true);
   });
 
   it("rejects when the per-team limit is already reached", async () => {
@@ -98,11 +116,12 @@ describe("scheduleTask validation (M6)", () => {
         channelId: validInput.channelId,
         threadId: validInput.threadId,
         isDM: false,
-        // Spread across distinct users so the per-user cap doesn't
-        // short-circuit before the per-team cap kicks in.
         createdByUserId: `OTHER_USER_${recordIndex}`,
         prompt: "x",
-        nextRunAt: Date.now(),
+        cronExpression: "0 9 * * 1-5",
+        recurring: true,
+        userTimezone: "UTC",
+        nextRunAt: Date.now() + 60_000,
         createdAt: Date.now(),
         cancelled: false,
         failureCount: 0,
@@ -114,7 +133,7 @@ describe("scheduleTask validation (M6)", () => {
     expect(mocks.saveScheduledTask).not.toHaveBeenCalled();
   });
 
-  it("rejects when the per-user limit is already reached (P2-2)", async () => {
+  it("rejects when the per-user limit is already reached", async () => {
     mocks.listScheduledTasksForTeam.mockResolvedValue(
       Array.from({ length: SCHEDULE_MAX_PER_USER }, (_unused, recordIndex) => ({
         id: `task-${recordIndex}`,
@@ -124,7 +143,10 @@ describe("scheduleTask validation (M6)", () => {
         isDM: false,
         createdByUserId: validInput.createdByUserId,
         prompt: "x",
-        nextRunAt: Date.now(),
+        cronExpression: "0 9 * * 1-5",
+        recurring: true,
+        userTimezone: "UTC",
+        nextRunAt: Date.now() + 60_000,
         createdAt: Date.now(),
         cancelled: false,
         failureCount: 0,
@@ -146,7 +168,10 @@ describe("scheduleTask validation (M6)", () => {
         isDM: false,
         createdByUserId: validInput.createdByUserId,
         prompt: "x",
-        nextRunAt: Date.now(),
+        cronExpression: "0 9 * * 1-5",
+        recurring: true,
+        userTimezone: "UTC",
+        nextRunAt: Date.now() + 60_000,
         createdAt: Date.now(),
         cancelled: true,
         failureCount: 0,
@@ -167,16 +192,34 @@ describe("scheduleTask validation (M6)", () => {
     expect(mocks.deleteScheduledTask).toHaveBeenCalledTimes(1);
   });
 
-  it("survives a cleanup failure when the queue publish also fails (M5)", async () => {
+  it("survives a cleanup failure when the queue publish also fails", async () => {
     mocks.send.mockRejectedValue(new Error("queue boom"));
     mocks.deleteScheduledTask.mockRejectedValue(new Error("redis blip"));
 
     const result = await scheduleTask(validInput);
     expect(result).toMatchObject({ ok: false, reason: "send_failed" });
   });
+
+  it("computes the first fire correctly in the user's timezone (e.g. weekday 9am LA)", async () => {
+    // Anchor "now" to a known instant: Sunday 2026-05-03 12:00 UTC = 5am Pacific.
+    // Cron `0 9 * * 1-5` interpreted in America/Los_Angeles should fire next at
+    // Mon May 4, 9am PT = Mon May 4 16:00 UTC.
+    const FIXED_NOW = Date.UTC(2026, 4, 3, 12, 0, 0);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(FIXED_NOW));
+
+    const result = await scheduleTask(validInput);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const expectedNextFire = Date.UTC(2026, 4, 4, 16, 0, 0);
+      expect(result.record.nextRunAt).toBe(expectedNextFire);
+    }
+
+    vi.useRealTimers();
+  });
 });
 
-describe("publishScheduledTaskMessage idempotency key (cursor[bot] HIGH)", () => {
+describe("publishScheduledTaskMessage idempotency key", () => {
   let originalVercel: string | undefined;
 
   beforeEach(() => {

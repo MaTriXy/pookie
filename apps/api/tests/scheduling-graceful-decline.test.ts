@@ -34,7 +34,9 @@ describe("scheduleTask graceful decline", () => {
       isDM: false,
       createdByUserId: "U0001",
       prompt: "remind us to ship the digest",
-      delaySeconds: 600,
+      cronExpression: "0 9 * * 1-5",
+      recurring: true,
+      userTimezone: "UTC",
     });
 
     expect(result).toEqual({

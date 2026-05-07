@@ -20,7 +20,13 @@ const scheduledTaskRecordSchema = z.object({
   isDM: z.boolean().default(false),
   createdByUserId: z.string().min(1),
   prompt: z.string().min(1),
-  intervalSeconds: z.number().int().positive().optional(),
+  cronExpression: z.string().min(1),
+  recurring: z.boolean(),
+  // IANA zone name (e.g., "America/Los_Angeles"). Resolved from the
+  // scheduling user's Slack profile at create-time and frozen with the
+  // record so subsequent fires interpret the cron the same way every
+  // time, even if the user changes their TZ later.
+  userTimezone: z.string().min(1),
   nextRunAt: z.number().int().positive(),
   createdAt: z.number().int().positive(),
   cancelled: z.boolean().default(false),
@@ -43,7 +49,7 @@ export type ScheduledTaskRecord = z.infer<typeof scheduledTaskRecordSchema>;
 // keeps refreshing its own TTL on each run via writeRecord, but the team
 // set key — only EXPIRE'd at saveScheduledTask time — eventually expires
 // and the task disappears from listScheduledTasksForTeam, becoming
-// invisible to list_scheduled_tasks / cancel_scheduled_task even though
+// invisible to cron_list / cron_delete even though
 // the queue keeps firing it.
 const writeRecord = (record: ScheduledTaskRecord): Promise<unknown> =>
   redis

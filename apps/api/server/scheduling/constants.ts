@@ -16,14 +16,15 @@ export const scheduleTeamSetKey = (teamId: string): string =>
 export const scheduleDedupKey = (messageId: string): string =>
   `${SCHEDULE_KEY_PREFIX}:dedup:${messageId}`;
 
-export const SCHEDULE_MIN_DELAY_SECONDS = 60;
+// Vercel Queues caps `delaySeconds` per message at 7 days. Cron occurrences
+// further out than that have to be daisy-chained — the consumer keeps
+// re-publishing chunks until the total delay reaches the target fire time.
+// See run-task.ts.
 export const SCHEDULE_MAX_DELAY_SECONDS = 7 * 24 * 60 * 60;
-// Recurring tasks have a higher floor than one-shot reminders. A 60-second
-// recurring task would fire 60×/hour × 24 hours/day = 1440 agent runs/day,
-// each potentially calling out to OpenAI / web_search / MCP servers. The
-// 10-minute floor caps that at 144 runs/day, which is still aggressive but
-// not absurd. One-shot reminders keep the 60s floor for the "set a 5 min
-// timer" use case.
+// Recurring tasks have a higher floor than one-shot reminders. A cron
+// schedule that fires every minute would burn 1440 agent runs/day, each
+// potentially calling out to OpenAI / web_search / MCP servers. 10 minutes
+// is the lowest interval the tool will accept for recurring jobs.
 export const SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS = 600;
 export const SCHEDULE_MAX_PER_TEAM = 50;
 // Per-user cap prevents a single workspace member from filling all 50 team
@@ -38,8 +39,4 @@ export const SCHEDULE_DEDUP_TTL_SECONDS = 24 * 60 * 60;
 
 export const SCHEDULE_PROMPT_MAX_CHARS = 1000;
 
-// Vercel Queues' SendMessage caps `delaySeconds` per message at 7 days, so
-// recurring schedules longer than that have to be daisy-chained — the
-// consumer keeps re-publishing chunks until the total delay reaches
-// `intervalSeconds`. See run-task.ts.
 export const SCHEDULE_FAILED_MESSAGE_LIMIT = 5;

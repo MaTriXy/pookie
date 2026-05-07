@@ -71,6 +71,9 @@ const baseRecord: ScheduledTaskRecord = {
   isDM: false,
   createdByUserId: "U0001",
   prompt: "remind us to ship the digest",
+  cronExpression: "7 14 * * 1",
+  recurring: false,
+  userTimezone: "UTC",
   nextRunAt: Date.now() + 60_000,
   createdAt: Date.now(),
   cancelled: false,
@@ -235,27 +238,31 @@ describe("processScheduledTaskMessage", () => {
     });
   });
 
-  describe("recurring lifecycle (H3)", () => {
+  describe("recurring lifecycle", () => {
+    // hourly cron — every hour at minute 7. nextRunAt is anchored at a
+    // specific UTC instant so test math is deterministic.
+    const RECURRING_NEXT_RUN_AT = Date.UTC(2026, 4, 4, 16, 7, 0);
     const recurringRecord: ScheduledTaskRecord = {
       ...baseRecord,
-      intervalSeconds: 3600,
+      cronExpression: "7 * * * *",
+      recurring: true,
+      userTimezone: "UTC",
+      nextRunAt: RECURRING_NEXT_RUN_AT,
     };
 
-    const buildUpdatedRecord = (
-      previous: ScheduledTaskRecord,
-    ): ScheduledTaskRecord => ({
-      ...previous,
-      nextRunAt: Date.now() + 3600 * 1000,
-      lastRunAt: Date.now(),
-      failureCount: 0,
-      lastError: undefined,
-    });
-
-    it("runs the task, updates nextRunAt, and re-publishes the next occurrence with a fresh idempotency key", async () => {
+    it("runs the task, computes next nextRunAt from the cron expression, and re-publishes with a fresh idempotency key", async () => {
       mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
-      const updatedRecord = buildUpdatedRecord(recurringRecord);
-      mocks.updateScheduledTaskAfterRun.mockResolvedValue(updatedRecord);
-      const before = Date.now();
+      // simulate the store's update returning the same record with nextRunAt
+      // bumped to whatever run-task computed (we'll verify run-task's call).
+      mocks.updateScheduledTaskAfterRun.mockImplementation(
+        async (record: ScheduledTaskRecord, nextRunAt: number) => ({
+          ...record,
+          nextRunAt,
+          lastRunAt: Date.now(),
+          failureCount: 0,
+          lastError: undefined,
+        }),
+      );
 
       const result = await processScheduledTaskMessage({
         message: { taskId: recurringRecord.id, remainingDelaySeconds: 0 },
@@ -264,25 +271,24 @@ describe("processScheduledTaskMessage", () => {
 
       expect(result.status).toBe("ran");
       expect(mocks.handleSlackMessage).toHaveBeenCalledTimes(1);
-
       expect(mocks.updateScheduledTaskAfterRun).toHaveBeenCalledTimes(1);
-      const [, nextRunAt] = mocks.updateScheduledTaskAfterRun.mock.calls[0]!;
-      expect(nextRunAt).toBeGreaterThanOrEqual(before + 3600 * 1000);
 
-      // Regression for cursor[bot] HIGH: the publish must use the NEW
-      // nextRunAt as the occurrence id so the idempotency key differs from
-      // the previous fire's key. If they were equal, Vercel Queues would
-      // silently drop the recurring republish inside its dedup window.
+      // Cron `7 * * * *` from 16:07 UTC → next is 17:07 UTC. run-task should
+      // anchor next from record.nextRunAt (drift-free), not from Date.now().
+      const [, nextRunAt] = mocks.updateScheduledTaskAfterRun.mock.calls[0]!;
+      expect(nextRunAt).toBe(Date.UTC(2026, 4, 4, 17, 7, 0));
+
+      // Idempotency key uses the new nextRunAt → differs from prior fire.
       expect(mocks.publishScheduledTaskMessage).toHaveBeenCalledWith(
         recurringRecord.id,
-        3600,
-        updatedRecord.nextRunAt,
+        expect.any(Number),
+        nextRunAt,
       );
-      expect(updatedRecord.nextRunAt).not.toBe(recurringRecord.nextRunAt);
+      expect(nextRunAt).not.toBe(recurringRecord.nextRunAt);
       expect(mocks.deleteScheduledTask).not.toHaveBeenCalled();
     });
 
-    it("passes the UPDATED record (not the stale pre-update one) to trackFailure when the recurring publish fails (cursor[bot] MEDIUM)", async () => {
+    it("passes the UPDATED record (not the stale pre-update one) to trackFailure when the recurring publish fails", async () => {
       // After a successful run, updateScheduledTaskAfterRun resets
       // failureCount to 0. If the next-occurrence publish then fails, we
       // must record that failure against the reset record — passing the
@@ -292,10 +298,17 @@ describe("processScheduledTaskMessage", () => {
         ...recurringRecord,
         failureCount: 4,
       };
-      const updatedRecord = buildUpdatedRecord(recordWithPriorFailures);
 
       mocks.loadScheduledTask.mockResolvedValue(recordWithPriorFailures);
-      mocks.updateScheduledTaskAfterRun.mockResolvedValue(updatedRecord);
+      mocks.updateScheduledTaskAfterRun.mockImplementation(
+        async (record: ScheduledTaskRecord, nextRunAt: number) => ({
+          ...record,
+          nextRunAt,
+          lastRunAt: Date.now(),
+          failureCount: 0,
+          lastError: undefined,
+        }),
+      );
       mocks.publishScheduledTaskMessage.mockResolvedValue({
         ok: false,
         error: "queue down",
@@ -319,15 +332,23 @@ describe("processScheduledTaskMessage", () => {
       expect(recordPassedToFailure).toMatchObject({
         id: recordWithPriorFailures.id,
         failureCount: 0,
-        nextRunAt: updatedRecord.nextRunAt,
       });
+      expect(recordPassedToFailure.nextRunAt).not.toBe(
+        recordWithPriorFailures.nextRunAt,
+      );
       expect(errorPassed).toBe("queue down");
     });
 
     it("returns retired after the failure limit is reached", async () => {
       mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
-      mocks.updateScheduledTaskAfterRun.mockResolvedValue(
-        buildUpdatedRecord(recurringRecord),
+      mocks.updateScheduledTaskAfterRun.mockImplementation(
+        async (record: ScheduledTaskRecord, nextRunAt: number) => ({
+          ...record,
+          nextRunAt,
+          lastRunAt: Date.now(),
+          failureCount: 0,
+          lastError: undefined,
+        }),
       );
       mocks.publishScheduledTaskMessage.mockResolvedValue({
         ok: false,
