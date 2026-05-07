@@ -8,7 +8,7 @@
     "start": "next start",
     "slack-manifest": "tsx --env-file-if-exists=.env.local scripts/slack-manifest.ts",
     "search-repl": "SKIP_ENV_VALIDATION=1 tsx --env-file-if-exists=.env.local scripts/search-repl.ts",
-    "test": "SKIP_ENV_VALIDATION=1 REDIS_URL=redis://localhost:6379 vp test run",
+    "test": "SKIP_ENV_VALIDATION=1 REDIS_URL=redis://localhost:6379 SLACK_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef vp test run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -34,6 +34,7 @@
     "@tanstack/react-query": "^5.100.6",
     "@vercel/analytics": "^2.0.1",
     "@vercel/otel": "^2.1.2",
+    "@vercel/queue": "^0.1.6",
     "ai": "^6.0.170",
     "ai-sdk-openai-websocket-fetch": "^1.0.0",
     "calligraph": "^1.4.1",
