@@ -5,6 +5,7 @@ import { slackBot } from "../slack-bot";
 import { logger } from "../utils/logger";
 import { redactError } from "../utils/redact-error";
 import { stripSlackBroadcasts } from "../utils/strip-slack-broadcasts";
+import { SCHEDULE_FAILED_MESSAGE_LIMIT } from "./constants";
 import { nextFireMs } from "./cron";
 import { publishScheduledTaskMessage } from "./index";
 import {
@@ -156,11 +157,55 @@ const runScheduledTaskInner = async (
   });
 };
 
+// On retire, surface the failure to the scheduler — the chain has stopped
+// and they need to know. Posts an ephemeral in the originating thread so
+// only they see it. Best-effort: if the workspace uninstalled Pookie or
+// the thread is no longer accessible, we just log and move on (the queue
+// message has already been deleted by recordScheduledTaskFailure).
+const notifyScheduledTaskRetired = async (
+  record: ScheduledTaskRecord,
+  errorMessage: string,
+): Promise<void> => {
+  try {
+    const slack: SlackAdapter = slackBot.getAdapter("slack");
+    await slackBot.initialize();
+    const installation = await slack.getInstallation(record.teamId);
+    if (!installation?.botToken) return;
+
+    const errorSnippet = redactError(errorMessage).slice(0, 120);
+    const message =
+      `🔔 your cron job \`${record.cronExpression}\` (${record.recurring ? "recurring" : "one-shot"}) ` +
+      `was retired after ${SCHEDULE_FAILED_MESSAGE_LIMIT} consecutive failures and won't fire again. ` +
+      `prompt: _${record.prompt.slice(0, 200)}_. ` +
+      `last error: \`${errorSnippet}\`. ` +
+      `recreate it if you still need it — open this thread and ask me to schedule again.`;
+
+    await slack.withBotToken(installation.botToken, async () => {
+      await slack.postEphemeral(
+        record.threadId,
+        record.createdByUserId,
+        message,
+      );
+    });
+  } catch (notifyError) {
+    logger.warn("[scheduling] failed to notify scheduler of cron retirement", {
+      taskId: record.id,
+      error:
+        notifyError instanceof Error
+          ? notifyError.message
+          : String(notifyError),
+    });
+  }
+};
+
 const trackFailure = async (
   record: ScheduledTaskRecord,
   errorMessage: string,
 ): Promise<ProcessScheduledTaskResult> => {
   const failure = await recordScheduledTaskFailure(record, errorMessage);
+  if (failure.shouldRetire) {
+    await notifyScheduledTaskRetired(record, errorMessage);
+  }
   return {
     status: failure.shouldRetire ? "retired" : "expired",
     taskId: record.id,

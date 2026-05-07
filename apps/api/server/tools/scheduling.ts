@@ -42,6 +42,11 @@ const taskSummary = (record: ScheduledTaskRecord) => ({
   recurring: record.recurring,
   timezone: record.userTimezone,
   nextRunAt: new Date(record.nextRunAt).toISOString(),
+  // Surfaced so users can answer "did my Monday digest fire last week?".
+  // undefined for tasks that haven't yet had a successful run.
+  lastRunAt: record.lastRunAt
+    ? new Date(record.lastRunAt).toISOString()
+    : undefined,
   cancelled: record.cancelled,
   channelId: record.channelId,
 });
@@ -82,6 +87,10 @@ const cronCreateResultSchema = z.object({
   recurring: z.boolean(),
   timezone: z.string(),
   firstFireAt: z.string(),
+  // True when we couldn't determine the user's Slack timezone and fell back
+  // to UTC. The toModelOutput surfaces this so the agent can warn the user
+  // instead of silently firing "9am" as 9am UTC.
+  timezoneFallback: z.boolean(),
 });
 
 const cronCreateTool = (context: SchedulingContext) =>
@@ -104,7 +113,7 @@ const cronCreateTool = (context: SchedulingContext) =>
         );
       }
 
-      const userTimezone = await resolveUserTimezone(
+      const { tz, isFallback } = await resolveUserTimezone(
         context.teamId,
         context.userId,
       );
@@ -118,7 +127,7 @@ const cronCreateTool = (context: SchedulingContext) =>
         prompt,
         cronExpression: cron,
         recurring,
-        userTimezone,
+        userTimezone: tz,
       });
 
       if (!result.ok) {
@@ -133,14 +142,25 @@ const cronCreateTool = (context: SchedulingContext) =>
         recurring: record.recurring,
         timezone: record.userTimezone,
         firstFireAt: new Date(record.nextRunAt).toISOString(),
+        timezoneFallback: isFallback,
       });
     },
     toModelOutput: (output) => {
       if (output.type === "error") return output.error.message;
-      const { id, prompt, cron, recurring, timezone, firstFireAt } =
-        output.result;
+      const {
+        id,
+        prompt,
+        cron,
+        recurring,
+        timezone,
+        firstFireAt,
+        timezoneFallback,
+      } = output.result;
       const cadence = recurring ? "recurring" : "one-shot";
-      return `${cadence} cron created (${id}) — \`${cron}\` (${timezone}); first fire at ${firstFireAt}: ${prompt}`;
+      const tzWarning = timezoneFallback
+        ? ` ⚠️ couldn't determine your Slack timezone, scheduled in UTC — if "${cron}" was meant in your local time, set your timezone in Slack profile and reschedule.`
+        : "";
+      return `${cadence} cron created (${id}) — \`${cron}\` (${timezone}); first fire at ${firstFireAt}: ${prompt}${tzWarning}`;
     },
   });
 
@@ -154,6 +174,7 @@ const cronListResultSchema = z.object({
       recurring: z.boolean(),
       timezone: z.string(),
       nextRunAt: z.string(),
+      lastRunAt: z.string().optional(),
       cancelled: z.boolean(),
       channelId: z.string(),
     }),
@@ -193,7 +214,8 @@ const cronListTool = (context: SchedulingContext) =>
       const lines = output.result.jobs.map((job) => {
         const cancelledTag = job.cancelled ? " [cancelled]" : "";
         const cadence = job.recurring ? "recurring" : "one-shot";
-        return `- ${job.id} → \`${job.cron}\` (${job.timezone}, ${cadence}) next ${job.nextRunAt}${cancelledTag}: ${job.prompt}`;
+        const lastRun = job.lastRunAt ? ` last fired ${job.lastRunAt}` : "";
+        return `- ${job.id} → \`${job.cron}\` (${job.timezone}, ${cadence}) next ${job.nextRunAt}${lastRun}${cancelledTag}: ${job.prompt}`;
       });
       return `${output.result.count} cron job(s):\n${lines.join("\n")}`;
     },

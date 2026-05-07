@@ -44,16 +44,19 @@ vi.mock("chat", () => ({
   parseMarkdown: vi.fn((text: string) => ({ type: "root", text })),
 }));
 
+const slackAdapterMock = vi.hoisted(() => ({
+  botUserId: "UPOOKIE",
+  getInstallation: vi
+    .fn()
+    .mockResolvedValue({ botToken: "xoxb-test-bot-token" }),
+  withBotToken: <T>(_token: string, fn: () => T): T => fn(),
+  postEphemeral: vi.fn().mockResolvedValue({ id: "eph-1" }),
+}));
+
 vi.mock("../server/slack-bot", () => ({
   slackBot: {
     initialize: vi.fn().mockResolvedValue(undefined),
-    getAdapter: vi.fn(() => ({
-      botUserId: "UPOOKIE",
-      getInstallation: vi.fn().mockResolvedValue({
-        botToken: "xoxb-test-bot-token",
-      }),
-      withBotToken: <T>(_token: string, fn: () => T): T => fn(),
-    })),
+    getAdapter: vi.fn(() => slackAdapterMock),
   },
 }));
 
@@ -339,7 +342,7 @@ describe("processScheduledTaskMessage", () => {
       expect(errorPassed).toBe("queue down");
     });
 
-    it("returns retired after the failure limit is reached", async () => {
+    it("returns retired and notifies the scheduler after the failure limit is reached (H1)", async () => {
       mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
       mocks.updateScheduledTaskAfterRun.mockImplementation(
         async (record: ScheduledTaskRecord, nextRunAt: number) => ({
@@ -357,6 +360,7 @@ describe("processScheduledTaskMessage", () => {
       mocks.recordScheduledTaskFailure.mockResolvedValue({
         shouldRetire: true,
       });
+      slackAdapterMock.postEphemeral.mockClear();
 
       const result = await processScheduledTaskMessage({
         message: { taskId: recurringRecord.id, remainingDelaySeconds: 0 },
@@ -364,6 +368,13 @@ describe("processScheduledTaskMessage", () => {
       });
 
       expect(result.status).toBe("retired");
+      expect(slackAdapterMock.postEphemeral).toHaveBeenCalledTimes(1);
+      const [threadId, userId, message] =
+        slackAdapterMock.postEphemeral.mock.calls[0]!;
+      expect(threadId).toBe(recurringRecord.threadId);
+      expect(userId).toBe(recurringRecord.createdByUserId);
+      expect(message).toMatch(/retired/i);
+      expect(message).toMatch(/5 consecutive failures/i);
     });
   });
 

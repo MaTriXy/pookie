@@ -20,6 +20,21 @@ const summarizeParseError = (parseError: unknown): string => {
   return raw.length > 200 ? `${raw.slice(0, 200)}…` : raw;
 };
 
+// Throws if `tz` isn't an IANA zone name `Intl.DateTimeFormat` recognizes.
+// Defense-in-depth: resolveUserTimezone always returns either a Slack-
+// supplied IANA tz or "UTC", but a corrupted Redis record or future
+// schema migration could put garbage here, and every subsequent fire
+// would throw inside cron-parser. Validating at create-time catches it
+// before the record is stored.
+const isValidIanaTimezone = (tz: string): boolean => {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // Compute the next fire timestamp strictly after `afterMs`, in the user's
 // timezone. Returns ms-epoch UTC. Throws if the cron expression has no
 // next fire (e.g., `* * 30 2 *` — Feb 30 doesn't exist; cron-parser
@@ -44,6 +59,12 @@ export const validateCronExpression = (
   timezone: string,
   nowMs: number,
 ): CronValidationResult => {
+  if (!isValidIanaTimezone(timezone)) {
+    return {
+      ok: false,
+      message: `invalid timezone: ${timezone} is not a recognized IANA zone name`,
+    };
+  }
   try {
     const firstFireMs = nextFireMs(cronExpression, timezone, nowMs);
     return { ok: true, firstFireMs };

@@ -102,6 +102,74 @@ describe("scheduleTask validation", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts every-second cron (no rate floor at all) — codifies NO LIMITS (H3)", async () => {
+    const result = await scheduleTask({
+      ...validInput,
+      cronExpression: "* * * * * *",
+      recurring: true,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a 30th task for the same user without rejection — codifies NO per-user CAP (H3)", async () => {
+    mocks.listScheduledTasksForTeam.mockResolvedValue(
+      Array.from({ length: 30 }, (_unused, recordIndex) => ({
+        id: `existing-${recordIndex}`,
+        teamId: validInput.teamId,
+        channelId: validInput.channelId,
+        threadId: validInput.threadId,
+        isDM: false,
+        createdByUserId: validInput.createdByUserId,
+        prompt: "x",
+        cronExpression: "0 9 * * 1-5",
+        recurring: true,
+        userTimezone: "UTC",
+        nextRunAt: Date.now() + 60_000,
+        createdAt: Date.now(),
+        cancelled: false,
+        failureCount: 0,
+      })),
+    );
+
+    const result = await scheduleTask(validInput);
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts a 100th task for the workspace without rejection — codifies NO per-team CAP (H3)", async () => {
+    mocks.listScheduledTasksForTeam.mockResolvedValue(
+      Array.from({ length: 100 }, (_unused, recordIndex) => ({
+        id: `existing-${recordIndex}`,
+        teamId: validInput.teamId,
+        channelId: validInput.channelId,
+        threadId: validInput.threadId,
+        isDM: false,
+        createdByUserId: `OTHER_USER_${recordIndex}`,
+        prompt: "x",
+        cronExpression: "0 9 * * 1-5",
+        recurring: true,
+        userTimezone: "UTC",
+        nextRunAt: Date.now() + 60_000,
+        createdAt: Date.now(),
+        cancelled: false,
+        failureCount: 0,
+      })),
+    );
+
+    const result = await scheduleTask(validInput);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects an invalid IANA timezone (M3)", async () => {
+    const result = await scheduleTask({
+      ...validInput,
+      userTimezone: "America/Not_A_Real_City",
+    });
+    expect(result).toMatchObject({ ok: false, reason: "validation" });
+    expect((result as { ok: false; message: string }).message).toMatch(
+      /invalid timezone/i,
+    );
+  });
+
   it("cleans up the redis record if the queue publish fails", async () => {
     mocks.send.mockRejectedValue(new Error("queue boom"));
 
