@@ -18,19 +18,27 @@ The hosted version of Pookie. Click the button, pick a workspace, approve the sc
 
 Run Pookie on your own infra. Your Slack tokens, OpenAI key, and Redis stay with you. Good if you need data residency, an air-gapped network, or want to fork the agent.
 
-#### Option 1 — Vercel (one click, includes managed Redis)
+#### Option 1: Vercel (one click, includes managed Redis)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmillionco%2Fpookie&root-directory=apps%2Fapi&env=SLACK_CLIENT_ID,SLACK_CLIENT_SECRET,SLACK_SIGNING_SECRET,SLACK_ENCRYPTION_KEY,OPENAI_API_KEY,IS_SELF_DEPLOYED&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22upstash%22%2C%22productSlug%22%3A%22upstash-kv%22%7D%5D)
 
-Easiest if you already use Vercel. The deploy flow automatically provisions an Upstash Redis instance and injects `REDIS_URL`. You'll need an `OPENAI_API_KEY` and a `SLACK_ENCRYPTION_KEY` (generate with `openssl rand -hex 32` — encrypts OAuth tokens and MCP creds in Redis). Use placeholder strings for the three Slack values on first deploy — you'll replace them after the bundled `/install` wizard creates your Slack app. Set `IS_SELF_DEPLOYED=true` so `/install` shows the post-deploy setup wizard instead of the cloud marketing flow. (Docker-based hosts below get this automatically via the Dockerfile.)
+Easiest if you already use Vercel. The deploy flow provisions an Upstash Redis instance and injects `REDIS_URL` for you.
 
-#### Option 2 — Railway (one click, includes managed Redis)
+Set these env vars before deploying:
+
+- `OPENAI_API_KEY`: your OpenAI API key.
+- `SLACK_ENCRYPTION_KEY`: a 32-byte hex string used to encrypt OAuth tokens and MCP credentials in Redis. Generate one with `openssl rand -hex 32`.
+- `IS_SELF_DEPLOYED=true`: tells `/install` to show the post-deploy setup wizard instead of the cloud marketing flow. (Docker-based hosts below set this automatically via the Dockerfile.)
+
+For the three Slack values (`SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`), use placeholder strings on first deploy. You'll replace them after the bundled `/install` wizard creates your Slack app.
+
+#### Option 2: Railway (one click, includes managed Redis)
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/93SQTC?utm_medium=integration&utm_source=template&utm_campaign=installation_guide)
 
-Provisions Pookie + Redis on Railway. Provide an `OPENAI_API_KEY`; leave the Slack values at their defaults — you'll fill them in after the first deploy via the bundled `/install` wizard.
+Provisions Pookie + Redis on Railway. Provide an `OPENAI_API_KEY` and leave the Slack values at their defaults. You'll fill them in after the first deploy via the bundled `/install` wizard.
 
-#### Option 3 — Docker (Fly, Render, Cloud Run, your VPS)
+#### Option 3: Docker (Fly, Render, Cloud Run, your VPS)
 
 The repo ships a standard `Dockerfile` (Next.js standalone) plus a `docker-compose.yml` that brings up Pookie + Redis locally:
 
