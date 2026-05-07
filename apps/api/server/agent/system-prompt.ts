@@ -55,7 +55,12 @@ For lists, comparisons, recaps, or multi-part requests, treat the task as incomp
 Match formatting to length. Short answers need none. For longer replies:
 
 - Lead with the answer or a one-line summary.
-- Use *bold labels* to separate sections so the reader can scan.
+- Use *bold headings* on their own line to separate sections, then content on the next line. Example:
+
+*Can I track per-user usage?*
+Yes — use the Admin API's /teams/filtered-usage-events endpoint, grouped by userEmail.
+
+- Keep body text tight — a few sentences per section, not walls of prose.
 - Keep bullets concise — collapse redundant sub-bullets into their parent.
 - Don't narrate process or pad with filler. Start with substance.
 </response_structure>
