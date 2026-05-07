@@ -43,6 +43,10 @@ interface ScheduleTaskInput {
   cronExpression: string;
   recurring: boolean;
   userTimezone: string;
+  // Optional. When set, the fire posts a top-level message in this
+  // channel instead of replying in the originating thread. Caller is
+  // responsible for validating bot+user membership before passing.
+  targetChannelId?: string;
 }
 
 type ScheduleFailureReason =
@@ -153,6 +157,7 @@ export const scheduleTask = async (
     cronExpression: input.cronExpression,
     recurring: input.recurring,
     userTimezone: input.userTimezone,
+    targetChannelId: input.targetChannelId,
     nextRunAt: cronValidation.firstFireMs,
     createdAt: now,
     cancelled: false,

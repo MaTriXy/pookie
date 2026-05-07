@@ -9,6 +9,7 @@ import {
   scheduleTask,
 } from "../scheduling";
 import { SCHEDULE_PROMPT_MAX_CHARS } from "../scheduling/constants";
+import { validateTargetChannelMembership } from "../scheduling/membership";
 import { resolveUserTimezone } from "../utils/resolve-user-timezone";
 
 import type { ScheduledTaskRecord } from "../scheduling";
@@ -49,6 +50,10 @@ const taskSummary = (record: ScheduledTaskRecord) => ({
     : undefined,
   cancelled: record.cancelled,
   channelId: record.channelId,
+  // When set, fires post a top-level message in this channel instead of
+  // replying in the originating thread. Surfaced so the user can audit
+  // routing and so cron_list answers "where do my automations post?".
+  targetChannelId: record.targetChannelId,
 });
 
 const cronCreateInputSchema = z.object({
@@ -78,6 +83,12 @@ const cronCreateInputSchema = z.object({
     .describe(
       "true = keep firing on the schedule until cancelled. false = fire once at the next matching time then auto-delete. For 'remind me at 5pm tomorrow' use false; for 'every Monday at 9am' use true.",
     ),
+  channel: z
+    .string()
+    .optional()
+    .describe(
+      "Optional Slack channel ID (e.g. C0789ABCDEF) to fire the task into a channel OTHER than the one you scheduled it from. Use this for 'every Monday at 9am post the digest in #engineering' from a DM with Pookie. Each fire creates a fresh top-level message (and therefore a new thread) in that channel — not a reply to a previous fire. Both Pookie AND the scheduling user must be members of the channel; if either isn't, the schedule is rejected. Use slack_check_channel_access first to resolve `#engineering` to its ID and confirm Pookie is in it.",
+    ),
 });
 
 const cronCreateResultSchema = z.object({
@@ -87,6 +98,9 @@ const cronCreateResultSchema = z.object({
   recurring: z.boolean(),
   timezone: z.string(),
   firstFireAt: z.string(),
+  // When set, fires post a top-level message in this channel; when
+  // undefined, fires post in the originating thread.
+  targetChannelId: z.string().optional(),
   // True when we couldn't determine the user's Slack timezone and fell back
   // to UTC. The toModelOutput surfaces this so the agent can warn the user
   // instead of silently firing "9am" as 9am UTC.
@@ -105,12 +119,30 @@ const cronCreateTool = (context: SchedulingContext) =>
     inputSchema: cronCreateInputSchema,
     resultSchema: cronCreateResultSchema,
     errorFallback: "failed to create cron job",
-    execute: async ({ cron, prompt, recurring }) => {
+    execute: async ({ cron, prompt, recurring, channel }) => {
       if (!context.channelId || !context.userId) {
         return toolErr(
           "validation",
           "scheduling requires the message to be in a Slack channel or DM with a known user",
         );
+      }
+
+      // Validate target-channel membership BEFORE any record write or
+      // queue publish. Hard posture (per design): both bot AND scheduler
+      // must be members of the target channel. Closes the laundering
+      // vector where a user could route the bot's voice into a channel
+      // they themselves can't post into.
+      if (channel) {
+        const membership = await validateTargetChannelMembership(
+          context.teamId,
+          channel,
+          context.userId,
+        );
+        if (!membership.ok) {
+          return toolErr("validation", membership.message, {
+            code: "target_channel_access",
+          });
+        }
       }
 
       const { tz, isFallback } = await resolveUserTimezone(
@@ -128,6 +160,7 @@ const cronCreateTool = (context: SchedulingContext) =>
         cronExpression: cron,
         recurring,
         userTimezone: tz,
+        targetChannelId: channel,
       });
 
       if (!result.ok) {
@@ -142,6 +175,7 @@ const cronCreateTool = (context: SchedulingContext) =>
         recurring: record.recurring,
         timezone: record.userTimezone,
         firstFireAt: new Date(record.nextRunAt).toISOString(),
+        targetChannelId: record.targetChannelId,
         timezoneFallback: isFallback,
       });
     },
@@ -154,13 +188,17 @@ const cronCreateTool = (context: SchedulingContext) =>
         recurring,
         timezone,
         firstFireAt,
+        targetChannelId,
         timezoneFallback,
       } = output.result;
       const cadence = recurring ? "recurring" : "one-shot";
+      const target = targetChannelId
+        ? ` posting into <#${targetChannelId}>`
+        : "";
       const tzWarning = timezoneFallback
         ? ` ⚠️ couldn't determine your Slack timezone, scheduled in UTC — if "${cron}" was meant in your local time, set your timezone in Slack profile and reschedule.`
         : "";
-      return `${cadence} cron created (${id}) — \`${cron}\` (${timezone}); first fire at ${firstFireAt}: ${prompt}${tzWarning}`;
+      return `${cadence} cron created (${id}) — \`${cron}\` (${timezone})${target}; first fire at ${firstFireAt}: ${prompt}${tzWarning}`;
     },
   });
 
@@ -177,6 +215,7 @@ const cronListResultSchema = z.object({
       lastRunAt: z.string().optional(),
       cancelled: z.boolean(),
       channelId: z.string(),
+      targetChannelId: z.string().optional(),
     }),
   ),
 });
@@ -215,7 +254,10 @@ const cronListTool = (context: SchedulingContext) =>
         const cancelledTag = job.cancelled ? " [cancelled]" : "";
         const cadence = job.recurring ? "recurring" : "one-shot";
         const lastRun = job.lastRunAt ? ` last fired ${job.lastRunAt}` : "";
-        return `- ${job.id} → \`${job.cron}\` (${job.timezone}, ${cadence}) next ${job.nextRunAt}${lastRun}${cancelledTag}: ${job.prompt}`;
+        const target = job.targetChannelId
+          ? ` → posts in <#${job.targetChannelId}>`
+          : "";
+        return `- ${job.id} → \`${job.cron}\` (${job.timezone}, ${cadence})${target} next ${job.nextRunAt}${lastRun}${cancelledTag}: ${job.prompt}`;
       });
       return `${output.result.count} cron job(s):\n${lines.join("\n")}`;
     },

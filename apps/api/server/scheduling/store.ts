@@ -27,6 +27,12 @@ const scheduledTaskRecordSchema = z.object({
   // record so subsequent fires interpret the cron the same way every
   // time, even if the user changes their TZ later.
   userTimezone: z.string().min(1),
+  // Optional channel routing. When set, fires post a fresh top-level
+  // message in this channel (not a reply in the originating thread).
+  // Validated at schedule time: bot-in-channel + scheduler-in-channel.
+  // Frozen on the record so subsequent fires can't be re-routed without
+  // creating a new task.
+  targetChannelId: z.string().optional(),
   nextRunAt: z.number().int().positive(),
   createdAt: z.number().int().positive(),
   cancelled: z.boolean().default(false),

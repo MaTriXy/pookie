@@ -51,6 +51,7 @@ const slackAdapterMock = vi.hoisted(() => ({
     .mockResolvedValue({ botToken: "xoxb-test-bot-token" }),
   withBotToken: <T>(_token: string, fn: () => T): T => fn(),
   postEphemeral: vi.fn().mockResolvedValue({ id: "eph-1" }),
+  postMessage: vi.fn().mockResolvedValue({ id: "1700000000.999999" }),
 }));
 
 vi.mock("../server/slack-bot", () => ({
@@ -454,6 +455,65 @@ describe("processScheduledTaskMessage", () => {
       // Agent sees the original directive so it can reason about it,
       // but only the visible post is sanitized.
       expect(messageArg.data.text).toContain("<!channel>");
+    });
+  });
+
+  describe("target-channel routing", () => {
+    const targetRecord: ScheduledTaskRecord = {
+      ...baseRecord,
+      targetChannelId: "C_ENG",
+    };
+
+    it("posts a top-level message into the target channel and runs the agent on the new thread", async () => {
+      mocks.loadScheduledTask.mockResolvedValue(targetRecord);
+      slackAdapterMock.postMessage
+        .mockClear()
+        .mockResolvedValue({ id: "1777824000.000100" });
+
+      await processScheduledTaskMessage({
+        message: { taskId: targetRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-target-fire",
+      });
+
+      expect(slackAdapterMock.postMessage).toHaveBeenCalledTimes(1);
+      const [threadId, body] = slackAdapterMock.postMessage.mock.calls[0]!;
+      // Channel-only threadId tells the slack adapter to post top-level
+      // (not as a reply). The fresh ts becomes the thread root for the
+      // agent's reply.
+      expect(threadId).toBe("slack:C_ENG");
+      expect((body as { markdown: string }).markdown).toContain(
+        targetRecord.prompt,
+      );
+
+      // The agent runs in a thread keyed to the new top-level message,
+      // not the originating thread.
+      expect(mocks.handleSlackMessage).toHaveBeenCalledTimes(1);
+      const [, syntheticMessage] = mocks.handleSlackMessage.mock.calls[0]!;
+      expect(
+        (syntheticMessage as { data: { threadId: string } }).data.threadId,
+      ).toBe("slack:C_ENG:1777824000.000100");
+
+      // The originating-thread post path must NOT have been used.
+      expect(mocks.threadPost).not.toHaveBeenCalled();
+    });
+
+    it("records a failure if posting into the target channel fails", async () => {
+      mocks.loadScheduledTask.mockResolvedValue(targetRecord);
+      slackAdapterMock.postMessage
+        .mockClear()
+        .mockRejectedValue(new Error("not_in_channel"));
+      mocks.recordScheduledTaskFailure.mockResolvedValue({
+        shouldRetire: false,
+      });
+
+      const result = await processScheduledTaskMessage({
+        message: { taskId: targetRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-target-fail",
+      });
+
+      expect(result.status).toBe("expired");
+      expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
+      expect(mocks.recordScheduledTaskFailure).toHaveBeenCalledTimes(1);
     });
   });
 });

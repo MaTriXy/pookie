@@ -119,28 +119,40 @@ const runScheduledTaskInner = async (
     return;
   }
 
-  const thread = ThreadImpl.fromJSON({
-    _type: "chat:Thread",
-    adapterName: "slack",
-    id: record.threadId,
-    channelId: record.channelId,
-    isDM: record.isDM,
-  });
-
   await slack.withBotToken(installation.botToken, async () => {
+    const postBody = buildPostBody(record, slack.botUserId);
+    const promptForAgent = slack.botUserId
+      ? `<@${slack.botUserId}> ${record.prompt}`
+      : record.prompt;
+
+    // Channel-routed fires: post a fresh top-level message in the target
+    // channel and run the agent on a brand-new thread keyed to that ts.
+    // The originating thread (where the user scheduled from) is NOT
+    // touched — schedules act as one-way automations into the target.
+    if (record.targetChannelId) {
+      await fireIntoTargetChannel(
+        record,
+        slack,
+        postBody,
+        promptForAgent,
+        record.targetChannelId,
+      );
+      return;
+    }
+
+    // Default path: reply in the originating thread.
+    const thread = ThreadImpl.fromJSON({
+      _type: "chat:Thread",
+      adapterName: "slack",
+      id: record.threadId,
+      channelId: record.channelId,
+      isDM: record.isDM,
+    });
     await thread
       .refresh()
       .catch((refreshError: unknown) =>
         logger.warn("[scheduling] failed to refresh thread", refreshError),
       );
-
-    // Visible post: sanitized prompt + scheduler attribution + bot mention.
-    // Synthetic message text seen by the agent: the original (un-stripped)
-    // prompt, so the agent can reason about and respond to the full intent.
-    const postBody = buildPostBody(record, slack.botUserId);
-    const promptForAgent = slack.botUserId
-      ? `<@${slack.botUserId}> ${record.prompt}`
-      : record.prompt;
     const postedMessage = await thread
       .post({ markdown: postBody })
       .catch((postError: unknown) => {
@@ -149,12 +161,68 @@ const runScheduledTaskInner = async (
       });
     const postedTs =
       postedMessage?.id ?? `scheduled-${record.id}-${Date.now()}`;
-
     await handleSlackMessage(
       thread,
       buildSyntheticMessage(record, postedTs, promptForAgent),
     );
   });
+};
+
+const fireIntoTargetChannel = async (
+  record: ScheduledTaskRecord,
+  slack: SlackAdapter,
+  postBody: string,
+  promptForAgent: string,
+  targetChannelId: string,
+): Promise<void> => {
+  // Channel-only threadId tells the slack adapter to post top-level
+  // (no thread_ts) — see SlackAdapter.decodeThreadId. The returned
+  // sentMessage.id is the ts of the new top-level message, which then
+  // becomes the thread root for the agent's reply.
+  const channelOnlyThreadId = `slack:${targetChannelId}`;
+  const sentMessage = await slack
+    .postMessage(channelOnlyThreadId, { markdown: postBody })
+    .catch((postError: unknown) => {
+      logger.warn(
+        "[scheduling] failed to post into target channel — skipping fire",
+        {
+          taskId: record.id,
+          targetChannelId,
+          error:
+            postError instanceof Error ? postError.message : String(postError),
+        },
+      );
+      return undefined;
+    });
+  if (!sentMessage?.id) {
+    // Throw so trackFailure records it; otherwise the chain proceeds as
+    // if the fire succeeded and the bot is "silently broken in
+    // #engineering" until someone notices.
+    throw new Error(
+      `failed to post into target channel ${targetChannelId} (no ts returned)`,
+    );
+  }
+
+  const newThreadId = `slack:${targetChannelId}:${sentMessage.id}`;
+  const thread = ThreadImpl.fromJSON({
+    _type: "chat:Thread",
+    adapterName: "slack",
+    id: newThreadId,
+    channelId: targetChannelId,
+    isDM: false,
+  });
+
+  // Synthetic message rebound to the target channel's new thread —
+  // agent's reply lands as a reply on the top-level we just posted.
+  const reroutedRecord: ScheduledTaskRecord = {
+    ...record,
+    channelId: targetChannelId,
+    threadId: newThreadId,
+  };
+  await handleSlackMessage(
+    thread,
+    buildSyntheticMessage(reroutedRecord, sentMessage.id, promptForAgent),
+  );
 };
 
 // On retire, surface the failure to the scheduler — the chain has stopped
