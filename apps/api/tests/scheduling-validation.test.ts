@@ -26,8 +26,6 @@ import {
   scheduleTask,
 } from "../server/scheduling";
 import {
-  SCHEDULE_MAX_PER_TEAM,
-  SCHEDULE_MAX_PER_USER,
   SCHEDULE_PROMPT_MAX_CHARS,
   SCHEDULED_TASK_TOPIC,
 } from "../server/scheduling/constants";
@@ -86,99 +84,21 @@ describe("scheduleTask validation", () => {
     expect(result).toMatchObject({ ok: false, reason: "validation" });
   });
 
-  it("rejects a recurring cron with sub-10-minute gaps", async () => {
-    // every minute = 60-second gap, well below the 10-minute recurring floor
+  it("accepts a 6-field cron with sub-minute fires", async () => {
+    const result = await scheduleTask({
+      ...validInput,
+      cronExpression: "*/10 * * * * *",
+      recurring: true,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts every-minute cron for recurring (no rate floor)", async () => {
     const result = await scheduleTask({
       ...validInput,
       cronExpression: "* * * * *",
       recurring: true,
     });
-    expect(result).toMatchObject({ ok: false, reason: "validation" });
-    expect((result as { ok: false; message: string }).message).toMatch(
-      /recurring cron schedules/i,
-    );
-  });
-
-  it("accepts the same sub-10-minute cron when recurring is false (one-shot)", async () => {
-    const result = await scheduleTask({
-      ...validInput,
-      cronExpression: "* * * * *",
-      recurring: false,
-    });
-    expect(result.ok).toBe(true);
-  });
-
-  it("rejects when the per-team limit is already reached", async () => {
-    mocks.listScheduledTasksForTeam.mockResolvedValue(
-      Array.from({ length: SCHEDULE_MAX_PER_TEAM }, (_unused, recordIndex) => ({
-        id: `task-${recordIndex}`,
-        teamId: validInput.teamId,
-        channelId: validInput.channelId,
-        threadId: validInput.threadId,
-        isDM: false,
-        createdByUserId: `OTHER_USER_${recordIndex}`,
-        prompt: "x",
-        cronExpression: "0 9 * * 1-5",
-        recurring: true,
-        userTimezone: "UTC",
-        nextRunAt: Date.now() + 60_000,
-        createdAt: Date.now(),
-        cancelled: false,
-        failureCount: 0,
-      })),
-    );
-
-    const result = await scheduleTask(validInput);
-    expect(result).toMatchObject({ ok: false, reason: "limit_reached" });
-    expect(mocks.saveScheduledTask).not.toHaveBeenCalled();
-  });
-
-  it("rejects when the per-user limit is already reached", async () => {
-    mocks.listScheduledTasksForTeam.mockResolvedValue(
-      Array.from({ length: SCHEDULE_MAX_PER_USER }, (_unused, recordIndex) => ({
-        id: `task-${recordIndex}`,
-        teamId: validInput.teamId,
-        channelId: validInput.channelId,
-        threadId: validInput.threadId,
-        isDM: false,
-        createdByUserId: validInput.createdByUserId,
-        prompt: "x",
-        cronExpression: "0 9 * * 1-5",
-        recurring: true,
-        userTimezone: "UTC",
-        nextRunAt: Date.now() + 60_000,
-        createdAt: Date.now(),
-        cancelled: false,
-        failureCount: 0,
-      })),
-    );
-
-    const result = await scheduleTask(validInput);
-    expect(result).toMatchObject({ ok: false, reason: "user_limit_reached" });
-    expect(mocks.saveScheduledTask).not.toHaveBeenCalled();
-  });
-
-  it("does not count cancelled tasks against the limit", async () => {
-    mocks.listScheduledTasksForTeam.mockResolvedValue(
-      Array.from({ length: SCHEDULE_MAX_PER_TEAM }, (_unused, recordIndex) => ({
-        id: `task-${recordIndex}`,
-        teamId: validInput.teamId,
-        channelId: validInput.channelId,
-        threadId: validInput.threadId,
-        isDM: false,
-        createdByUserId: validInput.createdByUserId,
-        prompt: "x",
-        cronExpression: "0 9 * * 1-5",
-        recurring: true,
-        userTimezone: "UTC",
-        nextRunAt: Date.now() + 60_000,
-        createdAt: Date.now(),
-        cancelled: true,
-        failureCount: 0,
-      })),
-    );
-
-    const result = await scheduleTask(validInput);
     expect(result.ok).toBe(true);
   });
 

@@ -8,8 +8,6 @@ import { getQueueSend, isQueuesAvailable } from "./capability";
 import {
   SCHEDULED_TASK_TOPIC,
   SCHEDULE_MAX_DELAY_SECONDS,
-  SCHEDULE_MAX_PER_TEAM,
-  SCHEDULE_MAX_PER_USER,
   SCHEDULE_PROMPT_MAX_CHARS,
 } from "./constants";
 import { validateCronExpression } from "./cron";
@@ -50,8 +48,6 @@ interface ScheduleTaskInput {
 type ScheduleFailureReason =
   | "queues_unavailable"
   | "validation"
-  | "limit_reached"
-  | "user_limit_reached"
   | "send_failed";
 
 type ScheduleTaskResult =
@@ -142,28 +138,9 @@ export const scheduleTask = async (
   const cronValidation = validateCronExpression(
     input.cronExpression,
     input.userTimezone,
-    input.recurring,
     now,
   );
   if (!cronValidation.ok) return fail("validation", cronValidation.message);
-
-  const existing = await listScheduledTasksForTeam(input.teamId);
-  const activeTasks = existing.filter((entry) => !entry.cancelled);
-  if (activeTasks.length >= SCHEDULE_MAX_PER_TEAM) {
-    return fail(
-      "limit_reached",
-      `this workspace already has ${activeTasks.length} active scheduled tasks (max ${SCHEDULE_MAX_PER_TEAM}). Cancel one before scheduling another.`,
-    );
-  }
-  const userActiveCount = activeTasks.filter(
-    (entry) => entry.createdByUserId === input.createdByUserId,
-  ).length;
-  if (userActiveCount >= SCHEDULE_MAX_PER_USER) {
-    return fail(
-      "user_limit_reached",
-      `you already have ${userActiveCount} active scheduled tasks (max ${SCHEDULE_MAX_PER_USER} per user). Cancel one of yours before scheduling another.`,
-    );
-  }
 
   const record: ScheduledTaskRecord = {
     id: randomUUID(),

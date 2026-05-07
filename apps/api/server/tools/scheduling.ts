@@ -51,12 +51,13 @@ const cronCreateInputSchema = z.object({
     .string()
     .min(1)
     .describe(
-      "Standard 5-field cron expression interpreted in the user's local timezone. " +
-        "Fields: minute hour day-of-month month day-of-week. Examples: " +
-        "`0 9 * * 1-5` = 9am on weekdays, " +
+      "Cron expression interpreted in the scheduler's Slack timezone (looked up automatically). " +
+        "Accepts both 5-field (`minute hour day-of-month month day-of-week`) and 6-field (`seconds minute hour day-of-month month day-of-week`) syntax — use 6-field when you need sub-minute fires. " +
+        "Examples: `0 9 * * 1-5` = 9am on weekdays, " +
         "`*/15 * * * *` = every 15 minutes, " +
+        "`*/10 * * * * *` = every 10 seconds, " +
         "`0 14 1 * *` = 2pm on the 1st of every month. " +
-        "Avoid the :00 and :30 minute marks for recurring jobs — nudge a few minutes off (e.g. :07 or :23) so dozens of teams don't all fire at the same instant.",
+        "For recurring jobs that fire on the hour, prefer minute marks like :07 or :23 over :00 / :30 so many automations don't all wake at the same instant.",
     ),
   prompt: z
     .string()
@@ -90,9 +91,7 @@ const cronCreateTool = (context: SchedulingContext) =>
         "When fired, Pookie posts a self-prompt in the originating thread and runs it as if the original requester just asked, so any tool — search, web, MCP — is available. " +
         "Use for reminders, recurring digests, automations, and any 'at X time / every X / on day Y' request. " +
         "Returns a job ID for use with cron_delete. " +
-        "Recurring jobs respect a per-user cap (10 active) and per-team cap (50 active); " +
-        "the smallest interval allowed for recurring is 10 minutes (one-shot can fire as soon as 1 minute out). " +
-        "Cron expressions are interpreted in the scheduling user's Slack timezone, looked up automatically.",
+        "Cron expressions are interpreted in the scheduling user's Slack timezone, looked up automatically. Both 5-field and 6-field (with seconds) cron are accepted.",
     ),
     inputSchema: cronCreateInputSchema,
     resultSchema: cronCreateResultSchema,

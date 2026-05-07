@@ -21,15 +21,6 @@ export const scheduleDedupKey = (messageId: string): string =>
 // re-publishing chunks until the total delay reaches the target fire time.
 // See run-task.ts.
 export const SCHEDULE_MAX_DELAY_SECONDS = 7 * 24 * 60 * 60;
-// Recurring tasks have a higher floor than one-shot reminders. A cron
-// schedule that fires every minute would burn 1440 agent runs/day, each
-// potentially calling out to OpenAI / web_search / MCP servers. 10 minutes
-// is the lowest interval the tool will accept for recurring jobs.
-export const SCHEDULE_MIN_RECURRING_INTERVAL_SECONDS = 600;
-export const SCHEDULE_MAX_PER_TEAM = 50;
-// Per-user cap prevents a single workspace member from filling all 50 team
-// slots and silently consuming compute on behalf of others.
-export const SCHEDULE_MAX_PER_USER = 10;
 export const SCHEDULE_RECORD_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 // 24h is comfortably longer than Vercel's max visibility timeout (1h) and
