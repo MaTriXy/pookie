@@ -10,7 +10,6 @@ const VERCEL_ENV_KEYS = [
   "VERCEL_URL",
   "VERCEL_ENV",
   "NEXT_RUNTIME_VERCEL",
-  "ALLOW_QUEUE_LOCAL_FORGERY",
 ] as const;
 
 interface VercelTrigger {
@@ -81,7 +80,7 @@ describe("scheduled-task route guards", () => {
     expect(body).toMatchObject({ error: "queues_unavailable" });
   });
 
-  it("returns 403 when on Vercel but the request lacks queue headers (P1-2)", async () => {
+  it("returns 403 when on Vercel but the request lacks the queue ce-type header (P1-2)", async () => {
     process.env.VERCEL = "1";
     const POST = await importRoute();
     const response = await POST(
@@ -95,13 +94,13 @@ describe("scheduled-task route guards", () => {
     expect(body).toMatchObject({ error: "forbidden" });
   });
 
-  it("returns 403 when only one of the queue headers is present (P1-2)", async () => {
+  it("returns 403 for a wrong ce-type value (P1-2)", async () => {
     process.env.VERCEL = "1";
     const POST = await importRoute();
     const response = await POST(
       new Request("http://localhost/api/queues/scheduled-task", {
         method: "POST",
-        headers: { "ce-type": "io.vercel.queue.message.v2beta" },
+        headers: { "ce-type": "io.vercel.queue.message.v1" },
         body: JSON.stringify({ taskId: "anything" }),
       }),
     );
