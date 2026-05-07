@@ -36,13 +36,27 @@ export type ScheduledTaskRecord = z.infer<typeof scheduledTaskRecordSchema>;
 // privacy-sensitive bits — stored plaintext they'd leak intent + Slack
 // IDs into anyone with a Redis dump. decryptJson gracefully handles
 // legacy plaintext records too, so this rolls forward without a migration.
+//
+// The multi() also re-asserts team-set membership and refreshes the team
+// set's TTL on every record write. Without that, recurring tasks running
+// longer than SCHEDULE_RECORD_TTL_SECONDS (90d) would orphan: the record
+// keeps refreshing its own TTL on each run via writeRecord, but the team
+// set key — only EXPIRE'd at saveScheduledTask time — eventually expires
+// and the task disappears from listScheduledTasksForTeam, becoming
+// invisible to list_scheduled_tasks / cancel_scheduled_task even though
+// the queue keeps firing it.
 const writeRecord = (record: ScheduledTaskRecord): Promise<unknown> =>
-  redis.set(
-    scheduleTaskKey(record.id),
-    encryptJson(record) as string,
-    "EX",
-    SCHEDULE_RECORD_TTL_SECONDS,
-  );
+  redis
+    .multi()
+    .set(
+      scheduleTaskKey(record.id),
+      encryptJson(record) as string,
+      "EX",
+      SCHEDULE_RECORD_TTL_SECONDS,
+    )
+    .sadd(scheduleTeamSetKey(record.teamId), record.id)
+    .expire(scheduleTeamSetKey(record.teamId), SCHEDULE_RECORD_TTL_SECONDS)
+    .exec();
 
 const parseRecord = (raw: string | null): ScheduledTaskRecord | null => {
   if (!raw) return null;
@@ -58,17 +72,7 @@ const parseRecord = (raw: string | null): ScheduledTaskRecord | null => {
 export const saveScheduledTask = async (
   record: ScheduledTaskRecord,
 ): Promise<void> => {
-  await redis
-    .multi()
-    .set(
-      scheduleTaskKey(record.id),
-      encryptJson(record) as string,
-      "EX",
-      SCHEDULE_RECORD_TTL_SECONDS,
-    )
-    .sadd(scheduleTeamSetKey(record.teamId), record.id)
-    .expire(scheduleTeamSetKey(record.teamId), SCHEDULE_RECORD_TTL_SECONDS)
-    .exec();
+  await writeRecord(record);
 };
 
 export const loadScheduledTask = (
