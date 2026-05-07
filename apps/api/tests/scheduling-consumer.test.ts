@@ -13,6 +13,11 @@ const mocks = vi.hoisted(() => ({
   handleSlackMessage: vi.fn(),
   threadPost: vi.fn(),
   threadRefresh: vi.fn(),
+  chatPostMessage: vi.fn(),
+  resolveSlackWebClient: vi.fn(),
+  renderPostable: vi.fn((message: { markdown?: string }) =>
+    typeof message?.markdown === "string" ? message.markdown : "",
+  ),
 }));
 
 vi.mock("../server/scheduling/store", () => ({
@@ -44,6 +49,14 @@ vi.mock("chat", () => ({
   parseMarkdown: vi.fn((text: string) => ({ type: "root", text })),
 }));
 
+vi.mock("@chat-adapter/slack", () => ({
+  // Stub the converter so the run-task module can instantiate it without
+  // pulling in the real `chat` BaseFormatConverter (which we mock above).
+  SlackFormatConverter: class {
+    renderPostable = mocks.renderPostable;
+  },
+}));
+
 const slackAdapterMock = vi.hoisted(() => ({
   botUserId: "UPOOKIE",
   getInstallation: vi
@@ -52,6 +65,13 @@ const slackAdapterMock = vi.hoisted(() => ({
   withBotToken: <T>(_token: string, fn: () => T): T => fn(),
   postEphemeral: vi.fn().mockResolvedValue({ id: "eph-1" }),
   postMessage: vi.fn().mockResolvedValue({ id: "1700000000.999999" }),
+  decodeThreadId: vi.fn((threadId: string) => {
+    const parts = threadId.split(":");
+    return {
+      channel: parts[1] ?? "",
+      threadTs: parts.length === 3 ? (parts[2] ?? "") : "",
+    };
+  }),
 }));
 
 vi.mock("../server/slack-bot", () => ({
@@ -59,6 +79,10 @@ vi.mock("../server/slack-bot", () => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     getAdapter: vi.fn(() => slackAdapterMock),
   },
+}));
+
+vi.mock("../server/slack/web-client", () => ({
+  resolveSlackWebClient: mocks.resolveSlackWebClient,
 }));
 
 vi.mock("../server/agent", () => ({
@@ -99,6 +123,12 @@ describe("processScheduledTaskMessage", () => {
     mocks.handleSlackMessage.mockReset().mockResolvedValue(undefined);
     mocks.threadPost.mockReset().mockResolvedValue({ id: "1700000000.999999" });
     mocks.threadRefresh.mockReset().mockResolvedValue(undefined);
+    mocks.chatPostMessage
+      .mockReset()
+      .mockResolvedValue({ ts: "1700000000.999999", ok: true });
+    mocks.resolveSlackWebClient.mockReset().mockResolvedValue({
+      chat: { postMessage: mocks.chatPostMessage },
+    });
   });
 
   afterEach(() => vi.clearAllMocks());
@@ -402,7 +432,7 @@ describe("processScheduledTaskMessage", () => {
 
     it("falls back to a synthetic ts when posting the self-prompt fails", async () => {
       mocks.loadScheduledTask.mockResolvedValue(baseRecord);
-      mocks.threadPost.mockRejectedValue(new Error("channel access lost"));
+      mocks.chatPostMessage.mockRejectedValue(new Error("channel access lost"));
 
       const result = await processScheduledTaskMessage({
         message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
@@ -411,6 +441,22 @@ describe("processScheduledTaskMessage", () => {
 
       // The agent still runs even if the visible self-prompt failed —
       // surface what we can rather than dropping the task entirely.
+      expect(mocks.handleSlackMessage).toHaveBeenCalledTimes(1);
+      expect(result.status).toBe("ran");
+    });
+
+    it("falls back to a synthetic ts when no slack web client is available", async () => {
+      mocks.loadScheduledTask.mockResolvedValue(baseRecord);
+      mocks.resolveSlackWebClient.mockResolvedValue(undefined);
+
+      const result = await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-no-client",
+      });
+
+      // Same posture as a post failure — the agent still runs, the
+      // synthetic ts keeps memory scoping consistent.
+      expect(mocks.chatPostMessage).not.toHaveBeenCalled();
       expect(mocks.handleSlackMessage).toHaveBeenCalledTimes(1);
       expect(result.status).toBe("ran");
     });
@@ -428,13 +474,15 @@ describe("processScheduledTaskMessage", () => {
         messageId: "msg-broadcast",
       });
 
-      expect(mocks.threadPost).toHaveBeenCalledTimes(1);
-      const postArg = mocks.threadPost.mock.calls[0]![0] as {
+      expect(mocks.renderPostable).toHaveBeenCalledTimes(1);
+      const renderedArg = mocks.renderPostable.mock.calls[0]![0] as {
         markdown: string;
       };
-      expect(postArg.markdown).not.toMatch(/<!channel>/);
-      expect(postArg.markdown).toMatch(/@channel/);
-      expect(postArg.markdown).toContain(`<@${baseRecord.createdByUserId}>`);
+      expect(renderedArg.markdown).not.toMatch(/<!channel>/);
+      expect(renderedArg.markdown).toMatch(/@channel/);
+      expect(renderedArg.markdown).toContain(
+        `<@${baseRecord.createdByUserId}>`,
+      );
     });
 
     it("preserves the un-stripped prompt in the synthetic message passed to the agent", async () => {
@@ -478,7 +526,7 @@ describe("processScheduledTaskMessage", () => {
       // the next chained fire, defeating the cancel.
       expect(result.status).toBe("cancelled");
       // Visible post NEVER happened (the gremlin was caught at the door).
-      expect(mocks.threadPost).not.toHaveBeenCalled();
+      expect(mocks.chatPostMessage).not.toHaveBeenCalled();
       expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
       // deleteScheduledTask called exactly once: by the late-cancel
       // re-check inside runScheduledTaskInner.
@@ -497,7 +545,7 @@ describe("processScheduledTaskMessage", () => {
       });
 
       expect(result.status).toBe("cancelled");
-      expect(mocks.threadPost).not.toHaveBeenCalled();
+      expect(mocks.chatPostMessage).not.toHaveBeenCalled();
       expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
     });
   });
@@ -537,8 +585,8 @@ describe("processScheduledTaskMessage", () => {
         (syntheticMessage as { data: { threadId: string } }).data.threadId,
       ).toBe("slack:C_ENG:1777824000.000100");
 
-      // The originating-thread post path must NOT have been used.
-      expect(mocks.threadPost).not.toHaveBeenCalled();
+      // The originating-thread broadcast path must NOT have been used.
+      expect(mocks.chatPostMessage).not.toHaveBeenCalled();
     });
 
     it("records a failure if posting into the target channel fails", async () => {
@@ -558,6 +606,93 @@ describe("processScheduledTaskMessage", () => {
       expect(result.status).toBe("expired");
       expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
       expect(mocks.recordScheduledTaskFailure).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("channel broadcast (reply_broadcast)", () => {
+    it("posts the self-prompt to the parent channel via reply_broadcast for thread fires", async () => {
+      mocks.loadScheduledTask.mockResolvedValue(baseRecord);
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast-thread",
+      });
+
+      expect(mocks.chatPostMessage).toHaveBeenCalledTimes(1);
+      const [postArgs] = mocks.chatPostMessage.mock.calls[0]!;
+      expect(postArgs).toMatchObject({
+        channel: baseRecord.channelId,
+        thread_ts: "1700000000.000001",
+        reply_broadcast: true,
+        unfurl_links: false,
+        unfurl_media: false,
+      });
+      expect(typeof (postArgs as { text: unknown }).text).toBe("string");
+      expect((postArgs as { text: string }).text).toContain(baseRecord.prompt);
+    });
+
+    it("uses the response ts as the synthetic message id when broadcast succeeds", async () => {
+      mocks.loadScheduledTask.mockResolvedValue(baseRecord);
+      mocks.chatPostMessage.mockResolvedValue({
+        ts: "1700000111.222333",
+        ok: true,
+      });
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast-ts",
+      });
+
+      const [, syntheticMessage] = mocks.handleSlackMessage.mock.calls[0]!;
+      expect((syntheticMessage as { data: { id: string } }).data.id).toBe(
+        "1700000111.222333",
+      );
+    });
+
+    it("does NOT set reply_broadcast for DM fires (no parent channel feed)", async () => {
+      mocks.loadScheduledTask.mockResolvedValue({
+        ...baseRecord,
+        isDM: true,
+        channelId: "D0001",
+        threadId: "slack:D0001:1700000000.000001",
+      });
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast-dm",
+      });
+
+      expect(mocks.chatPostMessage).toHaveBeenCalledTimes(1);
+      const [postArgs] = mocks.chatPostMessage.mock.calls[0]!;
+      // For a thread reply in a DM the reply_broadcast field is still
+      // sent, but always false — Slack would silently no-op it anyway,
+      // we explicitly send false so intent is auditable on the wire.
+      expect((postArgs as { reply_broadcast?: boolean }).reply_broadcast).toBe(
+        false,
+      );
+      expect((postArgs as { thread_ts?: string }).thread_ts).toBe(
+        "1700000000.000001",
+      );
+    });
+
+    it("OMITS reply_broadcast and thread_ts when the originating thread is itself a top-level post (no thread_ts)", async () => {
+      mocks.loadScheduledTask.mockResolvedValue({
+        ...baseRecord,
+        threadId: "slack:C0001",
+      });
+
+      await processScheduledTaskMessage({
+        message: { taskId: baseRecord.id, remainingDelaySeconds: 0 },
+        messageId: "msg-broadcast-toplevel",
+      });
+
+      expect(mocks.chatPostMessage).toHaveBeenCalledTimes(1);
+      const [postArgs] = mocks.chatPostMessage.mock.calls[0]!;
+      // Slack's discriminated union for ChatPostMessageArguments rejects
+      // `reply_broadcast` without a string `thread_ts`. Without a thread
+      // we fall through to the plain top-level shape and omit both.
+      expect(postArgs).not.toHaveProperty("reply_broadcast");
+      expect(postArgs).not.toHaveProperty("thread_ts");
     });
   });
 });

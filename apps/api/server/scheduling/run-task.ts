@@ -1,7 +1,9 @@
+import { SlackFormatConverter } from "@chat-adapter/slack";
 import { Message, ThreadImpl, parseMarkdown } from "chat";
 
 import { handleSlackMessage } from "../agent";
 import { slackBot } from "../slack-bot";
+import { resolveSlackWebClient } from "../slack/web-client";
 import { logger } from "../utils/logger";
 import { redactError } from "../utils/redact-error";
 import { stripSlackBroadcasts } from "../utils/strip-slack-broadcasts";
@@ -17,9 +19,15 @@ import {
 } from "./store";
 
 import type { SlackAdapter } from "@chat-adapter/slack";
+import type { ChatPostMessageArguments } from "@slack/web-api";
 
 import type { ScheduledTaskMessage } from "./index";
 import type { ScheduledTaskRecord } from "./store";
+
+// Reused across fires — the converter is stateless and doing the
+// markdown→mrkdwn conversion ourselves is the trade-off for bypassing the
+// chat-adapter's `thread.post()` (which doesn't expose `reply_broadcast`).
+const slackFormatConverter = new SlackFormatConverter();
 
 interface ProcessScheduledTaskResult {
   status:
@@ -166,7 +174,13 @@ const runScheduledTaskInner = async (
       return { ran: true };
     }
 
-    // Default path: reply in the originating thread.
+    // Default path: reply in the originating thread, but ALSO surface the
+    // fire in the parent channel via `reply_broadcast: true`. Without
+    // this, recurring automations get buried inside whatever thread they
+    // were scheduled from and channel members never see them. One Slack
+    // message — appears in the thread AND at the top of the channel feed.
+    // No-op for DMs (no separate channel feed) and for top-level threads
+    // (no thread_ts); guarded below so we don't pass it spuriously.
     const thread = ThreadImpl.fromJSON({
       _type: "chat:Thread",
       adapterName: "slack",
@@ -179,20 +193,62 @@ const runScheduledTaskInner = async (
       .catch((refreshError: unknown) =>
         logger.warn("[scheduling] failed to refresh thread", refreshError),
       );
-    const postedMessage = await thread
-      .post({ markdown: postBody })
-      .catch((postError: unknown) => {
-        logger.warn("[scheduling] failed to post self-prompt", postError);
-        return undefined;
-      });
-    const postedTs =
-      postedMessage?.id ?? `scheduled-${record.id}-${Date.now()}`;
+    const postedTs = await postSelfPromptToThread(record, slack, postBody);
     await handleSlackMessage(
       thread,
       buildSyntheticMessage(record, postedTs, promptForAgent),
     );
     return { ran: true };
   });
+};
+
+const postSelfPromptToThread = async (
+  record: ScheduledTaskRecord,
+  slack: SlackAdapter,
+  postBody: string,
+): Promise<string> => {
+  const fallbackTs = `scheduled-${record.id}-${Date.now()}`;
+  const webClient = await resolveSlackWebClient(record.teamId);
+  if (!webClient) {
+    logger.warn(
+      "[scheduling] no slack web client available for broadcast — skipping visible self-prompt",
+      { taskId: record.id, teamId: record.teamId },
+    );
+    return fallbackTs;
+  }
+
+  const { channel, threadTs } = slack.decodeThreadId(record.threadId);
+  const renderedText = slackFormatConverter.renderPostable({
+    markdown: postBody,
+  });
+
+  // Slack's discriminated union for ChatPostMessageArguments requires a
+  // string `thread_ts` whenever `reply_broadcast` is present. Branch the
+  // payload so:
+  //   - thread + non-DM   → thread reply broadcast back to the channel
+  //   - thread + DM       → plain thread reply (no channel feed to surface)
+  //   - no thread (root)  → top-level post (broadcast is meaningless)
+  const baseArgs = {
+    channel,
+    text: renderedText,
+    unfurl_links: false as const,
+    unfurl_media: false as const,
+  };
+  const args: ChatPostMessageArguments = threadTs
+    ? {
+        ...baseArgs,
+        thread_ts: threadTs,
+        reply_broadcast: !record.isDM,
+      }
+    : baseArgs;
+
+  try {
+    const response = await webClient.chat.postMessage(args);
+    return response.ts ?? fallbackTs;
+  } catch (postError) {
+    logger.warn("[scheduling] failed to post self-prompt", postError);
+    return fallbackTs;
+  }
 };
 
 const fireIntoTargetChannel = async (
