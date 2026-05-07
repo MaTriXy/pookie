@@ -107,6 +107,14 @@ export const splitDelay = (
 export const publishScheduledTaskMessage = async (
   taskId: string,
   totalDelaySeconds: number,
+  // ms-epoch of the occurrence this publish is for. Stable across consumer
+  // retries of the same fire (so a flaky publish step doesn't fan out into
+  // duplicate fires inside the queue's dedup window) but unique per
+  // recurring occurrence (so the next interval's publish doesn't collide
+  // with the previous one and get silently dropped). For daisy-chain
+  // republishes, callers pass the *original* fire time so all chunks of
+  // one occurrence share the same key.
+  occurrenceTimeMs: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> => {
   const { chunkSeconds, remainingSeconds } = splitDelay(totalDelaySeconds);
   try {
@@ -116,12 +124,7 @@ export const publishScheduledTaskMessage = async (
       { taskId, remainingDelaySeconds: remainingSeconds },
       {
         delaySeconds: chunkSeconds,
-        // Stable idempotency key tied to the task's intended fire time
-        // (computed by the caller via splitDelay). Re-publishes from a
-        // crashed consumer retry collapse to the original message inside
-        // the queue's dedup window, so a flaky publish step can't fan
-        // out into duplicate fires.
-        idempotencyKey: `${taskId}:${chunkSeconds}:${remainingSeconds}`,
+        idempotencyKey: `${taskId}:${occurrenceTimeMs}:${remainingSeconds}`,
       },
     );
     return { ok: true };
@@ -187,6 +190,7 @@ export const scheduleTask = async (
   const sendResult = await publishScheduledTaskMessage(
     record.id,
     input.delaySeconds,
+    record.nextRunAt,
   );
   if (!sendResult.ok) {
     // Best-effort cleanup. If this also fails (Redis blip), we'd otherwise

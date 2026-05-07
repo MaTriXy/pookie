@@ -166,6 +166,7 @@ describe("processScheduledTaskMessage", () => {
       expect(mocks.publishScheduledTaskMessage).toHaveBeenCalledWith(
         baseRecord.id,
         86_400,
+        baseRecord.nextRunAt,
       );
       expect(mocks.handleSlackMessage).not.toHaveBeenCalled();
     });
@@ -233,8 +234,20 @@ describe("processScheduledTaskMessage", () => {
       intervalSeconds: 3600,
     };
 
-    it("runs the task, updates nextRunAt, and re-publishes the next interval", async () => {
+    const buildUpdatedRecord = (
+      previous: ScheduledTaskRecord,
+    ): ScheduledTaskRecord => ({
+      ...previous,
+      nextRunAt: Date.now() + 3600 * 1000,
+      lastRunAt: Date.now(),
+      failureCount: 0,
+      lastError: undefined,
+    });
+
+    it("runs the task, updates nextRunAt, and re-publishes the next occurrence with a fresh idempotency key", async () => {
       mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
+      const updatedRecord = buildUpdatedRecord(recurringRecord);
+      mocks.updateScheduledTaskAfterRun.mockResolvedValue(updatedRecord);
       const before = Date.now();
 
       const result = await processScheduledTaskMessage({
@@ -249,15 +262,33 @@ describe("processScheduledTaskMessage", () => {
       const [, nextRunAt] = mocks.updateScheduledTaskAfterRun.mock.calls[0]!;
       expect(nextRunAt).toBeGreaterThanOrEqual(before + 3600 * 1000);
 
+      // Regression for cursor[bot] HIGH: the publish must use the NEW
+      // nextRunAt as the occurrence id so the idempotency key differs from
+      // the previous fire's key. If they were equal, Vercel Queues would
+      // silently drop the recurring republish inside its dedup window.
       expect(mocks.publishScheduledTaskMessage).toHaveBeenCalledWith(
         recurringRecord.id,
         3600,
+        updatedRecord.nextRunAt,
       );
+      expect(updatedRecord.nextRunAt).not.toBe(recurringRecord.nextRunAt);
       expect(mocks.deleteScheduledTask).not.toHaveBeenCalled();
     });
 
-    it("tracks a failure if the recurring re-publish fails", async () => {
-      mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
+    it("passes the UPDATED record (not the stale pre-update one) to trackFailure when the recurring publish fails (cursor[bot] MEDIUM)", async () => {
+      // After a successful run, updateScheduledTaskAfterRun resets
+      // failureCount to 0. If the next-occurrence publish then fails, we
+      // must record that failure against the reset record — passing the
+      // pre-update `record` would revive the prior failure count and make
+      // a single publish blip retire a healthy task.
+      const recordWithPriorFailures: ScheduledTaskRecord = {
+        ...recurringRecord,
+        failureCount: 4,
+      };
+      const updatedRecord = buildUpdatedRecord(recordWithPriorFailures);
+
+      mocks.loadScheduledTask.mockResolvedValue(recordWithPriorFailures);
+      mocks.updateScheduledTaskAfterRun.mockResolvedValue(updatedRecord);
       mocks.publishScheduledTaskMessage.mockResolvedValue({
         ok: false,
         error: "queue down",
@@ -267,19 +298,30 @@ describe("processScheduledTaskMessage", () => {
       });
 
       const result = await processScheduledTaskMessage({
-        message: { taskId: recurringRecord.id, remainingDelaySeconds: 0 },
-        messageId: "msg-recurring-fail",
+        message: {
+          taskId: recordWithPriorFailures.id,
+          remainingDelaySeconds: 0,
+        },
+        messageId: "msg-recurring-fail-after-run",
       });
 
       expect(result.status).toBe("expired");
-      expect(mocks.recordScheduledTaskFailure).toHaveBeenCalledWith(
-        recurringRecord,
-        "queue down",
-      );
+      expect(mocks.recordScheduledTaskFailure).toHaveBeenCalledTimes(1);
+      const [recordPassedToFailure, errorPassed] =
+        mocks.recordScheduledTaskFailure.mock.calls[0]!;
+      expect(recordPassedToFailure).toMatchObject({
+        id: recordWithPriorFailures.id,
+        failureCount: 0,
+        nextRunAt: updatedRecord.nextRunAt,
+      });
+      expect(errorPassed).toBe("queue down");
     });
 
     it("returns retired after the failure limit is reached", async () => {
       mocks.loadScheduledTask.mockResolvedValue(recurringRecord);
+      mocks.updateScheduledTaskAfterRun.mockResolvedValue(
+        buildUpdatedRecord(recurringRecord),
+      );
       mocks.publishScheduledTaskMessage.mockResolvedValue({
         ok: false,
         error: "queue down",

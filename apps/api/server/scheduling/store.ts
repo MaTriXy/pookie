@@ -123,17 +123,25 @@ export const deleteScheduledTask = async (
     .exec();
 };
 
-export const updateScheduledTaskAfterRun = (
+// Returns the updated record so callers can pass *that* (with the reset
+// failureCount and bumped nextRunAt/lastRunAt) into downstream operations.
+// Without this, a publish failure right after a successful run would call
+// recordScheduledTaskFailure with the stale pre-update record, reverting
+// nextRunAt and incorrectly counting against the retire threshold.
+export const updateScheduledTaskAfterRun = async (
   record: ScheduledTaskRecord,
   nextRunAt: number,
-): Promise<unknown> =>
-  writeRecord({
+): Promise<ScheduledTaskRecord> => {
+  const updated: ScheduledTaskRecord = {
     ...record,
     nextRunAt,
     lastRunAt: Date.now(),
     failureCount: 0,
     lastError: undefined,
-  });
+  };
+  await writeRecord(updated);
+  return updated;
+};
 
 export const recordScheduledTaskFailure = async (
   record: ScheduledTaskRecord,

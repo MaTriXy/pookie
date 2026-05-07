@@ -175,11 +175,14 @@ export const processScheduledTaskMessage = async ({
   }
 
   // Daisy-chain split: this message is just a chunk of a longer delay.
-  // Republish for the next chunk and don't run the task yet.
+  // Republish for the next chunk and don't run the task yet. Pass the
+  // record's nextRunAt as the occurrence id so consumer-retry republishes
+  // collapse to the same idempotency key.
   if (message.remainingDelaySeconds && message.remainingDelaySeconds > 0) {
     const publishResult = await publishScheduledTaskMessage(
       record.id,
       message.remainingDelaySeconds,
+      record.nextRunAt,
     );
     if (!publishResult.ok) return trackFailure(record, publishResult.error);
     return { status: "republished", taskId: record.id };
@@ -199,19 +202,26 @@ export const processScheduledTaskMessage = async ({
     return trackFailure(record, errorMessage);
   }
 
-  if (record.intervalSeconds === undefined) {
+  const intervalSeconds = record.intervalSeconds;
+  if (intervalSeconds === undefined) {
     await deleteScheduledTask(record);
     return { status: "ran", taskId: record.id };
   }
 
-  await updateScheduledTaskAfterRun(
+  // Capture the post-run record (failureCount reset, nextRunAt + lastRunAt
+  // bumped). If the next-occurrence publish below fails, trackFailure must
+  // see THIS updated record — passing the pre-update `record` would revert
+  // failureCount and incorrectly approach the retire threshold.
+  const updatedRecord = await updateScheduledTaskAfterRun(
     record,
-    Date.now() + record.intervalSeconds * 1000,
+    Date.now() + intervalSeconds * 1000,
   );
   const publishResult = await publishScheduledTaskMessage(
-    record.id,
-    record.intervalSeconds,
+    updatedRecord.id,
+    intervalSeconds,
+    updatedRecord.nextRunAt,
   );
-  if (!publishResult.ok) return trackFailure(record, publishResult.error);
-  return { status: "ran", taskId: record.id };
+  if (!publishResult.ok)
+    return trackFailure(updatedRecord, publishResult.error);
+  return { status: "ran", taskId: updatedRecord.id };
 };

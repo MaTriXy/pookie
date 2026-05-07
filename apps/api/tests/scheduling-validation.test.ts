@@ -21,11 +21,15 @@ vi.mock("@vercel/queue", () => ({
   send: mocks.send,
 }));
 
-import { scheduleTask } from "../server/scheduling";
+import {
+  publishScheduledTaskMessage,
+  scheduleTask,
+} from "../server/scheduling";
 import {
   SCHEDULE_MAX_PER_TEAM,
   SCHEDULE_MAX_PER_USER,
   SCHEDULE_PROMPT_MAX_CHARS,
+  SCHEDULED_TASK_TOPIC,
 } from "../server/scheduling/constants";
 
 const validInput = {
@@ -169,5 +173,53 @@ describe("scheduleTask validation (M6)", () => {
 
     const result = await scheduleTask(validInput);
     expect(result).toMatchObject({ ok: false, reason: "send_failed" });
+  });
+});
+
+describe("publishScheduledTaskMessage idempotency key (cursor[bot] HIGH)", () => {
+  let originalVercel: string | undefined;
+
+  beforeEach(() => {
+    originalVercel = process.env.VERCEL;
+    process.env.VERCEL = "1";
+    mocks.send.mockReset().mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    if (originalVercel === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = originalVercel;
+    vi.clearAllMocks();
+  });
+
+  it("includes the occurrence-time in the key so successive recurring fires don't collide", async () => {
+    await publishScheduledTaskMessage("task-1", 3600, 1_700_000_000_000);
+    await publishScheduledTaskMessage("task-1", 3600, 1_700_000_003_600_000);
+
+    expect(mocks.send).toHaveBeenCalledTimes(2);
+    const firstCall = mocks.send.mock.calls[0]!;
+    const secondCall = mocks.send.mock.calls[1]!;
+    const firstKey = (firstCall[2] as { idempotencyKey: string })
+      .idempotencyKey;
+    const secondKey = (secondCall[2] as { idempotencyKey: string })
+      .idempotencyKey;
+
+    expect(firstKey).not.toBe(secondKey);
+    expect(firstCall[0]).toBe(SCHEDULED_TASK_TOPIC);
+  });
+
+  it("produces the SAME key when called twice for the same occurrence (consumer-retry collapse)", async () => {
+    await publishScheduledTaskMessage("task-2", 3600, 1_700_000_000_000);
+    await publishScheduledTaskMessage("task-2", 3600, 1_700_000_000_000);
+
+    const firstKey = (
+      mocks.send.mock.calls[0]![2] as { idempotencyKey: string }
+    ).idempotencyKey;
+    const secondKey = (
+      mocks.send.mock.calls[1]![2] as { idempotencyKey: string }
+    ).idempotencyKey;
+
+    // Same occurrence + same chunk shape → same key, so the queue dedup
+    // window collapses a flaky-publish retry to the original message.
+    expect(firstKey).toBe(secondKey);
   });
 });
